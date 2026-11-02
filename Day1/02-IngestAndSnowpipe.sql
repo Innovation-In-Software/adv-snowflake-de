@@ -69,8 +69,7 @@ FROM
            METADATA$FILE_ROW_NUMBER,
            METADATA$START_SCAN_TIME
     FROM @EVENTS_STAGE/batch1/
-)
-FILE_FORMAT = EVENTS_JSON;
+);
 
 SELECT COUNT(*) AS raw_rows
 FROM EVENTS_RAW; -- 4 on the first pass; 8 if batch2 was already loaded
@@ -155,5 +154,3 @@ FROM TABLE(INFORMATION_SCHEMA.COPY_HISTORY(
 SELECT COUNT(*) AS pending_rows
 FROM EVENTS_STREAM; -- 8 before Lab 03 consumes them; 0 after its successful commit
 
-SELECT COUNT(*) AS pending_rows
-FROM EVENTS_STREAM; -- unchanged by the preceding SELECT
