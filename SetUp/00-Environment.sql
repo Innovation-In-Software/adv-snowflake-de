@@ -6,10 +6,8 @@
 ----------------------------------------------------------------------------------*/
 
 -- Advanced Snowflake | Day 1 | 00: identical isolated learning environments
--- Rehearsed in an isolated Snowflake namespace on 2026-10-12; see Validation-report.md.
 -- Run one section at a time; account-specific readiness still applies.
--- Use a NEW dedicated training account per participant, including instructor.
--- Shared accounts require a separately reviewed per-student naming/role scheme.
+-- Use a NEW dedicated training account.
 -- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 1: Everyone provisions the same limited lab role using their trial admin.
 -- ──────────────────────────────────────────────────────────────────────────────
@@ -29,8 +27,7 @@ CREATE WAREHOUSE ADV_WH
  
 CREATE DATABASE ADV_ORDERS;
 
-GRANT OWNERSHIP ON DATABASE ADV_ORDERS TO ROLE ADV_LAB 
-COPY CURRENT GRANTS; --Preserves existing grants on that database during the ownership transfer.
+GRANT OWNERSHIP ON DATABASE ADV_ORDERS TO ROLE ADV_LAB COPY CURRENT GRANTS; --Preserves existing grants on that database during the ownership transfer.
 
 GRANT USAGE, OPERATE ON WAREHOUSE ADV_WH TO ROLE ADV_LAB;
 GRANT EXECUTE TASK ON ACCOUNT TO ROLE ADV_LAB;
@@ -45,9 +42,9 @@ USE DATABASE ADV_ORDERS;
 CREATE SCHEMA BRONZE;
 CREATE SCHEMA SILVER;
 CREATE SCHEMA GOLD;
-CREATE SCHEMA OPS;
+CREATE SCHEMA OPS;  -- Operations schema - for control and monitoring of the training pipeline(s)
 
-ALTER SESSION SET TIMEZONE='UTC';
+ALTER SESSION SET TIMEZONE='UTC';  --zero-offset reference time zone (+00:00) - to ensure consistent timestamps across all students
 
 ALTER SESSION SET QUERY_TAG='ADV_2026_DAY1';
 -- This assigns the label ADV_2026_DAY1 to subsequent SQL statements executed in your current Snowflake session. 
@@ -60,10 +57,9 @@ SELECT
     CURRENT_WAREHOUSE();
 	
 -- ──────────────────────────────────────────────────────────────────────────────
--- CHECKPOINT: role ADV_LAB, warehouse ADV_WH. Record region for optional auto-ingest.
+-- CHECKPOINT: role ADV_LAB, warehouse ADV_WH. 
 -- ──────────────────────────────────────────────────────────────────────────────
--- CREATE intentionally fails on reused names. Do not replace a live lab database.
--- For another rehearsal use a fresh isolated environment; see reset instructions.
+
 
 SHOW ACCOUNTS ->>
 SELECT *
@@ -87,3 +83,14 @@ UNPIVOT (
     "user_name"
   )
 );
+
+
+-- Find our tagged statements from the last hour.
+-- Expect to see the demonstration SELECT and earlier setup statements
+-- executed after QUERY_TAG was set.
+
+SELECT QUERY_ID, START_TIME, QUERY_TAG, EXECUTION_STATUS, QUERY_TEXT
+FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY_BY_SESSION(RESULT_LIMIT => 100))
+WHERE QUERY_TAG = 'ADV_2026_DAY1'
+  AND START_TIME >= DATEADD('hour', -1, CURRENT_TIMESTAMP())
+ORDER BY START_TIME DESC;
