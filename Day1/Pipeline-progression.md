@@ -103,12 +103,12 @@ EXISTING: EVENTS_STREAM -> EVENT_INBOX
                                |
 REGION_REFERENCE -- join ------+
                                v
-                         SNOWPARK_EVENTS
+                         ORDER_EVENTS_ENRICHED
                          (typed / classified / enriched)
                                |
                       valid / unique / latest
                                v
-                       SNOWPARK_CANDIDATES
+                       ORDER_STATE_CANDIDATES
                                |
                              MERGE
                                v

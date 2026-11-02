@@ -97,11 +97,11 @@ def main(sf_session):
         enriched = enrich_events(classified, sf_session.table("SILVER.REGION_REFERENCE"))
         candidates = select_candidates(enriched)
 
-        sf_session.table("SILVER.SNOWPARK_EVENTS").delete()
-        enriched.select(*EVENT_COLUMNS).write.insert_into("SILVER.SNOWPARK_EVENTS")
-        sf_session.table("SILVER.SNOWPARK_CANDIDATES").delete()
-        candidates.write.insert_into("SILVER.SNOWPARK_CANDIDATES")
-        result = merge_current(sf_session, sf_session.table("SILVER.SNOWPARK_CANDIDATES"))
+        sf_session.table("SILVER.ORDER_EVENTS_ENRICHED").delete()
+        enriched.select(*EVENT_COLUMNS).write.insert_into("SILVER.ORDER_EVENTS_ENRICHED")
+        sf_session.table("SILVER.ORDER_STATE_CANDIDATES").delete()
+        candidates.write.insert_into("SILVER.ORDER_STATE_CANDIDATES")
+        result = merge_current(sf_session, sf_session.table("SILVER.ORDER_STATE_CANDIDATES"))
         sf_session.sql("COMMIT").collect()
         return f"Applied with Snowpark: {result}"
     except Exception:
