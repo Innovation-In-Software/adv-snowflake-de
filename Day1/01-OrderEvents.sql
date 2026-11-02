@@ -153,9 +153,9 @@ ORDER BY batch;
 
 The intended responsibilities:
 
-ORDER_EVENTS_SOURCE table:       Synthetic mock order-event data used to generate reproducible input batches.
-EVENTS_JSON format:  JSON parsing and GZIP compression settings for the staged files.
-EVENTS_STAGE:        Internal stage containing the two generated JSON files.
+ORDER_EVENTS_SOURCE table:  Synthetic mock order-event data used to generate reproducible input batches.
+EVENTS_JSON format:         JSON parsing and GZIP compression settings for the staged files.
+EVENTS_STAGE:               Internal stage containing the two generated JSON files.
 
 
 The result: two GZIP-compressed JSON files on the internal stage, generated
