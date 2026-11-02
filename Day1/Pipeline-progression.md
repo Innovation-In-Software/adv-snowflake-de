@@ -4,15 +4,15 @@ Snowflake Advanced Data Engineering
 
 These diagrams show intended structure at each lab checkpoint. Read the SQL comments and verify actual outputs; diagrams do not certify an untested run. Arrows are labelled data dependencies or control triggers. A view arrow means a query dependency, not a stored copy. The diagrams use plain Markdown code blocks and require no diagram renderer.
 
-## Lab 01 - Fixture and staged files
+## Lab 01 - Source data and staged files
 
 ```text
-FIXTURE (batch, payload)
+ORDER_EVENTS_SOURCE (batch, payload)
   -> SQL unload using EVENTS_JSON
   -> EVENTS_STAGE / batch1 and batch2 files
 ```
 
-Add the repeatable event fixture, JSON file format and internal stage. No Bronze destination or processing stream is created here. Staged files contain full order states, including the identical e2 replay and the invalid e3 amount.
+Add the repeatable synthetic order-event source table, JSON file format and internal stage. No Bronze destination or processing stream is created here. Staged files contain full order states, including the identical e2 replay and the invalid e3 amount.
 
 ## Lab 02 - File ingestion into Bronze
 

@@ -1,7 +1,7 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
 1) Define the order-event contract
-2) Create deterministic JSON fixtures using SQL
+2) Create deterministic synthetic JSON events using SQL
 3) Unload files to an internal stage and verify their contents
 
 
@@ -13,9 +13,9 @@ Students should finish with:
 - Verification that they can list the files and query their contents.
 ----------------------------------------------------------------------------------*/
 
--- 01 | Project contract and SQL-only fixture creation
+-- 01 | Project contract and SQL-only source data creation
 -- Instructor runs each STEP; everyone repeats and checks before continuing.
--- Diagram: Pipeline-progression.md, Lab 01 - Fixture and staged files.
+-- Diagram: Pipeline-progression.md, Lab 01 - Source data and staged files.
 
 USE ROLE ADV_LAB;
 USE WAREHOUSE ADV_WH;
@@ -24,7 +24,7 @@ USE SCHEMA BRONZE;
 
 -- Use a common session time zone for classroom checks and LTZ history display.
 -- This is session setup, not a conversion of stored event timestamps.
--- Fixture event_time strings already contain Z (UTC), so their TIMESTAMP_TZ
+-- Source event_time strings already contain Z (UTC), so their TIMESTAMP_TZ
 -- interpretation does not depend on this setting. Timestamps without an offset
 -- would use the session zone when converted to TIMESTAMP_TZ.
 
@@ -68,19 +68,19 @@ ALTER SESSION SET TIMEZONE='UTC';
 -- the active-order total rather than deleted from the order history.
 
 
--- FIXTURE is controlled sample data, not the production ingestion destination.
+-- ORDER_EVENTS_SOURCE contains synthetic mock order-event data, not the production ingestion destination.
 -- batch selects the generated input file; it is outside the JSON payload.
 -- payload stores the parsed JSON object as VARIANT. Only payload is unloaded.
 -- The eight rows below form two four-row deliveries, not eight distinct orders.
 -- Files may contain records in any order; precedence comes from the contract.
 
-CREATE OR REPLACE TABLE FIXTURE
+CREATE OR REPLACE TABLE ORDER_EVENTS_SOURCE
 (
     batch NUMBER,
     payload VARIANT
 );
 
-INSERT INTO FIXTURE
+INSERT INTO ORDER_EVENTS_SOURCE
 SELECT column1, PARSE_JSON(column2)
 FROM VALUES
 -- Batch 1: initial purchase orders, an exact duplicate, and invalid source data.
@@ -102,7 +102,7 @@ FROM VALUES
 (2,'{"event_id":"e6","order_id":"o3","version":2,"event_time":"2026-11-02T10:02:00Z","status":"PLACED","amount":"30.00","region":"US"}'),
 -- e7: a delayed older snapshot of o1 ($90, version 1) arrives in batch 2.
 -- It has a different event_id from e1, so it is not an exact-event duplicate.
--- It must not overwrite version 2. The fixture intentionally also exercises
+-- It must not overwrite version 2. The source data intentionally also exercises
 -- equal-version precedence; Silver uses event_time, then event_id as a classroom
 -- tie-breaker. A production source contract should reject ambiguous revisions.
 (2,'{"event_id":"e7","order_id":"o1","version":1,"event_time":"2026-11-02T08:59:00Z","status":"PLACED","amount":"90.00","region":"US"}');
@@ -119,7 +119,7 @@ COPY INTO @EVENTS_STAGE/batch1/events.json.gz
 FROM
 (
     SELECT payload
-    FROM FIXTURE
+    FROM ORDER_EVENTS_SOURCE
     WHERE batch = 1
 )
 SINGLE = TRUE
@@ -129,7 +129,7 @@ COPY INTO @EVENTS_STAGE/batch2/events.json.gz
 FROM
 (
     SELECT payload
-    FROM FIXTURE
+    FROM ORDER_EVENTS_SOURCE
     WHERE batch = 2
 )
 SINGLE = TRUE
@@ -139,12 +139,12 @@ OVERWRITE = FALSE;
 LIST @EVENTS_STAGE;
 
 SELECT batch, COUNT(*)
-FROM FIXTURE
+FROM ORDER_EVENTS_SOURCE
 GROUP BY batch
 ORDER BY batch;
 
 -- ──────────────────────────────────────────────────────────────────────────────
--- CHECKPOINT: 2 staged files; 4 fixture rows in each batch.
+-- CHECKPOINT: 2 staged files; 4 source rows in each batch.
 -- ──────────────────────────────────────────────────────────────────────────────
 -- Do not rerun the unloads. Duplicate file paths and load metadata are separate
 -- from duplicate business event IDs.
@@ -153,12 +153,12 @@ ORDER BY batch;
 
 The intended responsibilities:
 
-FIXTURE table:       Controlled sample data used to generate reproducible input batches.
+ORDER_EVENTS_SOURCE table:       Synthetic mock order-event data used to generate reproducible input batches.
 EVENTS_JSON format:  JSON parsing and GZIP compression settings for the staged files.
 EVENTS_STAGE:        Internal stage containing the two generated JSON files.
 
 
 The result: two GZIP-compressed JSON files on the internal stage, generated
-from four fixture rows per batch. LIST verifies that both files are present;
-the fixture counts verify the number of input rows in each batch.
+from four source rows per batch. LIST verifies that both files are present;
+the source counts verify the number of input rows in each batch.
 ----------------------------------------------------------------------------------*/

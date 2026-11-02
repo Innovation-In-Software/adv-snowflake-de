@@ -242,7 +242,7 @@ WHERE reject_reason IS NOT NULL;
 -- HAVING > 1: keep IDs whose valid deliveries disagree about event content.
 -- File name, row number and scan time are outside payload and are not compared.
 --
--- The fixture contains an identical e2 replay, so expect NO conflict rows.
+-- The source data contains an identical e2 replay, so expect NO conflict rows.
 -- Production limitation: TO_JSON does not guarantee JSON object key order.
 -- A general implementation needs a defined canonical comparison of event content.
 -- Source: https://docs.snowflake.com/en/sql-reference/functions/to_json

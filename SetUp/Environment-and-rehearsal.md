@@ -10,6 +10,8 @@ Run 00-Environment.sql once, in sections. It creates ADV_LAB, ADV_WH, ADV_ORDERS
 
 Warehouse auto-suspend limits idle warehouse use; it is not a cap on Snowpipe or total account charges. Monitor classroom consumption and pause ingestion/tasks at day end. Do not promise a fixed lab cost before rehearsal.
 
+Lab 01 creates `ADV_ORDERS.BRONZE.ORDER_EVENTS_SOURCE`, a synthetic mock order-event source table with `batch` and `payload` columns. Its payloads are unloaded into staged JSON files for ingestion; it is separate from the Bronze ingestion destination.
+
 ## First-class preflight (30 minutes)
 
 Instructor executes; all students repeat: sign in, confirm account/region, execute setup, confirm role and warehouse, execute SELECT 1. Compare outputs. Confirm everyone can create stage, stream, SQL procedure and task. Task owner ADV_LAB needs global EXECUTE TASK plus warehouse USAGE and access to referenced objects. No one proceeds to ingestion until all participants pass.
