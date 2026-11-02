@@ -162,7 +162,7 @@ INSERT INTO SILVER.EVENT_INBOX (payload, source_file, source_row, scan_time)
 SELECT payload, source_file, source_row, scan_time
 FROM BRONZE.EVENTS_STREAM;
 
-SELECT event_id, version, amount
+SELECT event_id, version::int, amount
 FROM VW_TYPED_EVENTS
 ORDER BY event_id;
 
@@ -331,34 +331,27 @@ USING
     SELECT order_id, event_id, version, event_time, status, amount, region
     FROM SILVER.VW_CLASSIFIED_EVENTS
     WHERE reject_reason IS NULL
-    QUALIFY ROW_NUMBER() OVER
-    (
-        PARTITION BY order_id
-        ORDER BY version DESC, event_time DESC, event_id DESC,
-                 source_file, source_row
-    ) = 1
+    QUALIFY ROW_NUMBER() OVER(PARTITION BY order_id
+                              ORDER BY version DESC, event_time DESC, event_id DESC, source_file, source_row
+                              ) = 1
 ) s
 ON t.order_id = s.order_id
-
 WHEN MATCHED AND
-(
-    s.version > t.version
-    OR (s.version = t.version AND s.event_time > t.event_time)
-    OR (s.version = t.version AND s.event_time = t.event_time
-        AND s.event_id > t.event_id)
-)
-THEN UPDATE SET
-    event_id = s.event_id,
-    version = s.version,
-    event_time = s.event_time,
-    status = s.status,
-    amount = s.amount,
-    region = s.region
-
+    (
+        s.version > t.version
+        OR (s.version = t.version AND s.event_time > t.event_time)
+        OR (s.version = t.version AND s.event_time = t.event_time
+            AND s.event_id > t.event_id)
+    )
+    THEN UPDATE SET event_id = s.event_id,
+                    version = s.version,
+                    event_time = s.event_time,
+                    status = s.status,
+                    amount = s.amount,
+                    region = s.region
 WHEN NOT MATCHED THEN
-    INSERT (order_id, event_id, version, event_time, status, amount, region)
-    VALUES (s.order_id, s.event_id, s.version, s.event_time,
-            s.status, s.amount, s.region);
+    INSERT (order_id,   event_id,   version,   event_time,   status,   amount,   region)
+    VALUES (s.order_id, s.event_id, s.version, s.event_time, s.status, s.amount, s.region);
 
 SELECT *
 FROM ORDERS_CURRENT
@@ -430,34 +423,27 @@ BEGIN
         SELECT order_id, event_id, version, event_time, status, amount, region
         FROM SILVER.VW_CLASSIFIED_EVENTS
         WHERE reject_reason IS NULL
-        QUALIFY ROW_NUMBER() OVER
-        (
-            PARTITION BY order_id
-            ORDER BY version DESC, event_time DESC, event_id DESC,
-                     source_file, source_row
-        ) = 1
+        QUALIFY ROW_NUMBER() OVER(PARTITION BY order_id
+                                  ORDER BY version DESC, event_time DESC, event_id DESC, source_file, source_row
+                                  ) = 1
     ) s
     ON t.order_id = s.order_id
-
-        WHEN MATCHED AND
-    (
-        s.version > t.version
-        OR (s.version = t.version AND s.event_time > t.event_time)
-        OR (s.version = t.version AND s.event_time = t.event_time
-            AND s.event_id > t.event_id)
-    )
-    THEN UPDATE SET
-        event_id = s.event_id,
-        version = s.version,
-        event_time = s.event_time,
-        status = s.status,
-        amount = s.amount,
-        region = s.region
-
-        WHEN NOT MATCHED THEN
-        INSERT (order_id, event_id, version, event_time, status, amount, region)
-        VALUES (s.order_id, s.event_id, s.version, s.event_time,
-                s.status, s.amount, s.region);
+    WHEN MATCHED AND
+        (
+            s.version > t.version
+            OR (s.version = t.version AND s.event_time > t.event_time)
+            OR (s.version = t.version AND s.event_time = t.event_time
+                AND s.event_id > t.event_id)
+        )
+        THEN UPDATE SET event_id = s.event_id,
+                        version = s.version,
+                        event_time = s.event_time,
+                        status = s.status,
+                        amount = s.amount,
+                        region = s.region
+    WHEN NOT MATCHED THEN
+        INSERT (order_id,   event_id,   version,   event_time,   status,   amount,   region)
+        VALUES (s.order_id, s.event_id, s.version, s.event_time, s.status, s.amount, s.region);
 
     COMMIT;
 
