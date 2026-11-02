@@ -86,7 +86,6 @@ UNPIVOT (
 
 
 -- Find our tagged statements from the last hour.
--- Expect to see the demonstration SELECT and earlier setup statements
 -- executed after QUERY_TAG was set.
 
 SELECT QUERY_ID, START_TIME, QUERY_TAG, EXECUTION_STATUS, QUERY_TEXT
