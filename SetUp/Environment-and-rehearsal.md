@@ -2,6 +2,8 @@
 
 ## Uniform classroom profile
 
+Naming convention: ordinary and secure views use the `VW_` prefix; materialized views use `MVW_`. Tables and dynamic tables retain their existing names. The scripts and diagrams use these names consistently. Updating course files does not rename objects already created in a Snowflake account.
+
 Use one fresh, dedicated Snowflake training account per person, including the instructor, with the same cloud, region, edition and feature settings. The core Day 1 design uses native tables and user-managed X-Small compute. Select Enterprise-capable training environments for later masking/row-access-policy labs; verify entitlements before class. AWS is required only for the optional internal-stage AUTO_INGEST preview branch as documented on 2026-10-09. Do not introduce mixed-cloud paths during a synchronous class.
 
 Each person needs browser access, a SQL worksheet, and the ability to use ACCOUNTADMIN for the short, identical provisioning script. Return immediately to ADV_LAB for labs. In organization-managed accounts an authorized administrator must provision equivalent isolated resources per learner; this package's fixed names MUST NOT be used by multiple learners in one account. That alternative has not been authored or tested here.

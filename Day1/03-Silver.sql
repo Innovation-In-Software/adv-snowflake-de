@@ -133,7 +133,7 @@ FROM BRONZE.EVENTS_STREAM;
 
 -- The view now stores the SELECT we have just inspected. It stores no rows.
 
-CREATE OR REPLACE VIEW TYPED_EVENTS AS
+CREATE OR REPLACE VIEW VW_TYPED_EVENTS AS
 SELECT
     payload,
     source_file,
@@ -163,7 +163,7 @@ SELECT payload, source_file, source_row, scan_time
 FROM BRONZE.EVENTS_STREAM;
 
 SELECT event_id, version, amount
-FROM TYPED_EVENTS
+FROM VW_TYPED_EVENTS
 ORDER BY event_id;
 
 -- The CASE expression applies the business contract to the typed values.
@@ -181,13 +181,13 @@ SELECT
         WHEN region IS NULL OR region NOT IN ('US','EU') THEN 'BAD_REGION'
         ELSE NULL
     END AS reject_reason
-FROM TYPED_EVENTS;
+FROM VW_TYPED_EVENTS;
 
 ROLLBACK;
 
 -- The reviewed CASE query becomes the classification view, outside the transaction.
 
-CREATE OR REPLACE VIEW CLASSIFIED_EVENTS AS
+CREATE OR REPLACE VIEW VW_CLASSIFIED_EVENTS AS
 SELECT
     *,
     CASE
@@ -199,7 +199,7 @@ SELECT
         WHEN region IS NULL OR region NOT IN ('US','EU') THEN 'BAD_REGION'
         ELSE NULL
     END AS reject_reason
-FROM TYPED_EVENTS;
+FROM VW_TYPED_EVENTS;
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 4: Inspect rejected rows and immutable-event conflicts, then create views.
@@ -214,13 +214,13 @@ FROM BRONZE.EVENTS_STREAM;
 -- Start with a short inspection query: expect e3 / BAD_AMOUNT.
 
 SELECT event_id, reject_reason
-FROM CLASSIFIED_EVENTS
+FROM VW_CLASSIFIED_EVENTS
 WHERE reject_reason IS NOT NULL;
 
--- Review the full-row filter we will reuse as REJECTED_EVENTS.
+-- Review the full-row filter we will reuse as VW_REJECTED_EVENTS.
 
 SELECT *
-FROM CLASSIFIED_EVENTS
+FROM VW_CLASSIFIED_EVENTS
 WHERE reject_reason IS NOT NULL;
 
 -- Find conflicting reuse of an event_id, not ordinary duplicate deliveries.
@@ -235,7 +235,7 @@ WHERE reject_reason IS NOT NULL;
 -- That is a normal state-change event, not a conflict with the earlier event.
 --
 -- WHERE: include only rows that passed the business validation rules.
--- Invalid rows remain in REJECTED_EVENTS and are not checked by this query.
+-- Invalid rows remain in VW_REJECTED_EVENTS and are not checked by this query.
 -- GROUP BY: collect deliveries of the same event_id, not of the same order_id.
 -- TO_JSON: represent each payload as text for this classroom comparison.
 -- COUNT(DISTINCT ...): count different payload representations, not deliveries.
@@ -248,7 +248,7 @@ WHERE reject_reason IS NOT NULL;
 -- Source: https://docs.snowflake.com/en/sql-reference/functions/to_json
 
 SELECT event_id
-FROM CLASSIFIED_EVENTS
+FROM VW_CLASSIFIED_EVENTS
 WHERE reject_reason IS NULL
 GROUP BY event_id
 HAVING COUNT(DISTINCT TO_JSON(payload)) > 1;
@@ -257,18 +257,18 @@ ROLLBACK;
 
 -- Create each view only after checking its SELECT; there is no open transaction.
 
-CREATE OR REPLACE VIEW REJECTED_EVENTS AS
+CREATE OR REPLACE VIEW VW_REJECTED_EVENTS AS
 SELECT *
-FROM CLASSIFIED_EVENTS
+FROM VW_CLASSIFIED_EVENTS
 WHERE reject_reason IS NOT NULL;
 
 -- Reuse the conflict check reviewed above. This view lists conflicting event IDs;
 -- it neither removes duplicates nor chooses which conflicting payload is correct.
 -- APPLY_EVENTS checks this view and rolls back if any conflict is present.
 
-CREATE OR REPLACE VIEW EVENT_CONFLICTS AS
+CREATE OR REPLACE VIEW VW_EVENT_CONFLICTS AS
 SELECT event_id
-FROM CLASSIFIED_EVENTS
+FROM VW_CLASSIFIED_EVENTS
 WHERE reject_reason IS NULL
 GROUP BY event_id
 HAVING COUNT(DISTINCT TO_JSON(payload)) > 1;
@@ -301,7 +301,7 @@ FROM EVENT_INBOX;
 -- If it is not zero, execute ROLLBACK and stop. Do not continue to MERGE.
 
 SELECT COUNT(*) AS conflicts
-FROM EVENT_CONFLICTS;
+FROM VW_EVENT_CONFLICTS;
 
 -- Inspect the candidate SELECT before embedding it in MERGE.
 -- It chooses one valid latest state per order from the preserved inbox history.
@@ -311,7 +311,7 @@ FROM EVENT_CONFLICTS;
 -- Production contracts should reject ambiguous versions instead of lexical ties.
 
 SELECT order_id, event_id, version, event_time, status, amount, region
-FROM CLASSIFIED_EVENTS
+FROM VW_CLASSIFIED_EVENTS
 WHERE reject_reason IS NULL
 QUALIFY ROW_NUMBER() OVER
 (
@@ -329,7 +329,7 @@ MERGE INTO SILVER.ORDERS_CURRENT t
 USING
 (
     SELECT order_id, event_id, version, event_time, status, amount, region
-    FROM SILVER.CLASSIFIED_EVENTS
+    FROM SILVER.VW_CLASSIFIED_EVENTS
     WHERE reject_reason IS NULL
     QUALIFY ROW_NUMBER() OVER
     (
@@ -365,7 +365,7 @@ FROM ORDERS_CURRENT
 ORDER BY order_id;
 
 SELECT event_id, reject_reason
-FROM REJECTED_EVENTS;
+FROM VW_REJECTED_EVENTS;
 
 -- The three current rows and e3 / BAD_AMOUNT are visible inside this transaction.
 
@@ -417,7 +417,7 @@ BEGIN
     FROM BRONZE.EVENTS_STREAM;
 
     SELECT COUNT(*) INTO :conflicts
-    FROM SILVER.EVENT_CONFLICTS;
+    FROM SILVER.VW_EVENT_CONFLICTS;
 
     IF (conflicts > 0) THEN
         RAISE bad_event;
@@ -428,7 +428,7 @@ BEGIN
     USING
     (
         SELECT order_id, event_id, version, event_time, status, amount, region
-        FROM SILVER.CLASSIFIED_EVENTS
+        FROM SILVER.VW_CLASSIFIED_EVENTS
         WHERE reject_reason IS NULL
         QUALIFY ROW_NUMBER() OVER
         (
@@ -485,7 +485,7 @@ ORDER BY order_id;
 -- CHECKPOINT: o1/e4/v2/PAID/120; o2/e5/v2/CANCELLED/50; o3/e6/v2/PLACED/30.
 
 SELECT event_id, reject_reason
-FROM REJECTED_EVENTS;
+FROM VW_REJECTED_EVENTS;
 
 SELECT COUNT(*) AS inbox_rows
 FROM EVENT_INBOX;

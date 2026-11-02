@@ -89,7 +89,7 @@ def main(sf_session):
         sf_session.sql("""INSERT INTO SILVER.EVENT_INBOX
             SELECT payload, source_file, source_row, scan_time
             FROM BRONZE.EVENTS_STREAM""").collect()
-        if sf_session.table("SILVER.EVENT_CONFLICTS").count():
+        if sf_session.table("SILVER.VW_EVENT_CONFLICTS").count():
             raise ValueError("Conflicting payloads for immutable event_id")
 
         typed = type_events(sf_session.table("SILVER.EVENT_INBOX"))

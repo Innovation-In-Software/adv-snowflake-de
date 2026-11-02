@@ -35,13 +35,13 @@ Add EVENTS_RAW, its append-only stream and ORDERS_PIPE. Create the stream before
 EVENTS_RAW -> EVENTS_STREAM -- INSERT --> EVENT_INBOX
                                            |
                                            v
-                                      TYPED_EVENTS
+                                      VW_TYPED_EVENTS
                                            |
                                            v
-                                     CLASSIFIED_EVENTS
+                                     VW_CLASSIFIED_EVENTS
                                        /    |     \
                                       v     v      v
-                             REJECTED_EVENTS |  EVENT_CONFLICTS
+                             VW_REJECTED_EVENTS |  VW_EVENT_CONFLICTS
                                             |
                                 valid latest candidate / order
                                             |
@@ -61,7 +61,7 @@ DATA PATH
 update.json.gz (two e8 deliveries)
   -> ORDERS_PIPE -> EVENTS_RAW -> EVENTS_STREAM
   -> APPLY_EVENTS -> EVENT_INBOX -> validation / selection
-  -> ORDERS_CURRENT -> GOLD.ORDER_METRICS (live view)
+  -> ORDERS_CURRENT -> GOLD.VW_ORDER_METRICS (live view)
                  \
                   -> aggregate snapshot -> OPS.RUN_AUDIT
 

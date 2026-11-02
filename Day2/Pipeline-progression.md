@@ -30,7 +30,7 @@ Define ORDER_CONTACTS first, then populate its reference data. Dynamic Table def
 ## Lab 09 - Governed consumption boundary
 
 ```text
-ORDERS_CURRENT -> ORDER_DETAIL_DT -> CONSUMER.ORDERS
+ORDERS_CURRENT -> ORDER_DETAIL_DT -> CONSUMER.VW_ORDERS
                                       secure view
                                           ^
                               EMAIL_MASK + REGION_ACCESS
@@ -57,9 +57,9 @@ Define DQ_DEMO first. Develop/evaluate the metric before its optional scheduled 
 ## Lab 11 - Consumers
 
 ```text
-ORDER_DETAIL_DT -> CONSUMER.ORDERS -> US worksheet
+ORDER_DETAIL_DT -> CONSUMER.VW_ORDERS -> US worksheet
                                       US-owned Streamlit / notebook
-ORDER_METRICS_DT -> SHARE_US_METRICS -> optional aggregate sharing
+ORDER_METRICS_DT -> VW_SHARE_US_METRICS -> optional aggregate sharing
 ```
 
 No new base table. Consumers use the governed boundary. The app is owned by ADV_ANALYST_US and is US-scoped for all viewers; do not imply per-viewer role filtering. A separate view exposes only US aggregate metrics for the optional share branch.

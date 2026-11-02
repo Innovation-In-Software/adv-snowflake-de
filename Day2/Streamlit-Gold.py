@@ -12,7 +12,7 @@ if role != "ADV_ANALYST_US":
 st.title("US order operations")
 st.caption("All app viewers receive this app owner's US-scoped, masked contract.")
 orders = session.sql("""SELECT ORDER_ID, STATUS, AMOUNT, REGION, EMAIL
-    FROM ADV_ORDERS.CONSUMER.ORDERS ORDER BY ORDER_ID""").to_pandas()
+    FROM ADV_ORDERS.CONSUMER.VW_ORDERS ORDER BY ORDER_ID""").to_pandas()
 active = orders[orders["STATUS"] != "CANCELLED"]
 st.metric("Active orders", len(active))
 st.metric("Active order value (USD)", f"{active['AMOUNT'].sum():.2f}")

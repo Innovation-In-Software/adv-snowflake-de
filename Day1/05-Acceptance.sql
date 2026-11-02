@@ -58,19 +58,19 @@ actual AS
     FROM SILVER.ORDERS_CURRENT
     UNION ALL
     SELECT 'Rejects', COUNT(*)
-    FROM SILVER.REJECTED_EVENTS
+    FROM SILVER.VW_REJECTED_EVENTS
     UNION ALL
     SELECT 'Stream drained', COUNT(*)
     FROM BRONZE.EVENTS_STREAM
     UNION ALL
     SELECT 'No conflicts', COUNT(*)
-    FROM SILVER.EVENT_CONFLICTS
+    FROM SILVER.VW_EVENT_CONFLICTS
     UNION ALL
     SELECT 'Gold rows', COUNT(*)
-    FROM GOLD.ORDER_METRICS
+    FROM GOLD.VW_ORDER_METRICS
     UNION ALL
     SELECT 'Gold value', SUM(active_amount_usd)
-    FROM GOLD.ORDER_METRICS
+    FROM GOLD.VW_ORDER_METRICS
 )
 SELECT e.check_name, e.expected_value, a.actual_value,
        IFF(a.actual_value = e.expected_value, 'PASS', 'FAIL') AS result
@@ -109,7 +109,7 @@ WITH expected AS
     FROM VALUES ('US', 2, 165)
 )
 SELECT region, active_orders, active_amount_usd
-FROM GOLD.ORDER_METRICS
+FROM GOLD.VW_ORDER_METRICS
 INTERSECT
 SELECT region, active_orders, active_amount_usd
 FROM expected;
@@ -124,7 +124,7 @@ WITH expected AS
     FROM VALUES ('e3', 'BAD_AMOUNT')
 )
 SELECT event_id, reject_reason
-FROM SILVER.REJECTED_EVENTS
+FROM SILVER.VW_REJECTED_EVENTS
 INTERSECT
 SELECT event_id, reject_reason
 FROM expected;

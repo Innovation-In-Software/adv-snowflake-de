@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS RUN_AUDIT
 
 -- DEVELOPMENT: define the live Gold query, then connect processing and audit.
 
-CREATE OR REPLACE VIEW GOLD.ORDER_METRICS AS
+CREATE OR REPLACE VIEW GOLD.VW_ORDER_METRICS AS
 SELECT
     region,
     COUNT(*) active_orders,
@@ -38,7 +38,7 @@ GROUP BY region;
 
 -- Current active order value is not recognized revenue, nor sum of event amounts.
 
-SELECT * FROM GOLD.ORDER_METRICS; -- US: 2, 150.00; no EU active orders
+SELECT * FROM GOLD.VW_ORDER_METRICS; -- US: 2, 150.00; no EU active orders
 
 CREATE TASK APPLY_TASK
     WAREHOUSE = ADV_WH
@@ -115,7 +115,7 @@ ORDER BY SCHEDULED_TIME DESC;
 
 SELECT * FROM RUN_AUDIT ORDER BY recorded_at DESC; -- 3 orders, active value 165
 
-SELECT * FROM GOLD.ORDER_METRICS; -- US: 2, 165
+SELECT * FROM GOLD.VW_ORDER_METRICS; -- US: 2, 165
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 2: Execute again with no stream data; inspect SKIPPED/condition behavior.

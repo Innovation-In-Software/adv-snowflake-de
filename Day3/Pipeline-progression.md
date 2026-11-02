@@ -41,7 +41,7 @@ Create ORDERS_SORTED at the start of this experiment. Compare exact totals, prun
 ## Lab 16 - Materialized aggregates and QAS estimate
 
 ```text
-ORDERS_BASE -> DAILY_ORDER_MV -> direct aggregate query
+ORDERS_BASE -> MVW_DAILY_ORDER -> direct aggregate query
       |               ^
       +-> base query -+ optimizer may choose rewrite
 captured query ID -> QAS eligibility estimate
