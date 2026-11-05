@@ -28,6 +28,9 @@
 USE ROLE ADV_LAB;
 USE DATABASE ADV_ORDERS;
 
+-- Check Tasks Status
+SHOW TASKS IN SCHEMA OPS;
+
 ALTER TASK OPS.APPLY_TASK SUSPEND;
 
 -- Also stop the optional Lab 06 notebook consumer if it was created.
@@ -42,6 +45,9 @@ ALTER PIPE BRONZE.ORDERS_PIPE SET PIPE_EXECUTION_PAUSED=TRUE;
 SHOW TASKS IN SCHEMA OPS;
 
 SELECT SYSTEM$PIPE_STATUS('ADV_ORDERS.BRONZE.ORDERS_PIPE');
+
+-- Check the warehouse status
+SHOW WAREHOUSES LIKE 'ADV_WH';
 
 -- USE WAREHOUSE does not resume compute by itself. Suspend only if running.
 EXECUTE IMMEDIATE $$
