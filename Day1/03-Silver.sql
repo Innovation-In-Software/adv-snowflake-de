@@ -313,12 +313,8 @@ FROM VW_EVENT_CONFLICTS;
 SELECT order_id, event_id, version, event_time, status, amount, region
 FROM VW_CLASSIFIED_EVENTS
 WHERE reject_reason IS NULL
-QUALIFY ROW_NUMBER() OVER
-(
-    PARTITION BY order_id
-    ORDER BY version DESC, event_time DESC, event_id DESC,
-             source_file, source_row
-) = 1;
+QUALIFY ROW_NUMBER() OVER(PARTITION BY order_id
+                          ORDER BY version DESC, event_time DESC, event_id DESC, source_file, source_row) = 1;
 
 -- Use those candidates in MERGE. A new order is inserted; a higher-priority
 -- state updates the existing order. An older state cannot overwrite a newer one.
@@ -332,8 +328,7 @@ USING
     FROM SILVER.VW_CLASSIFIED_EVENTS
     WHERE reject_reason IS NULL
     QUALIFY ROW_NUMBER() OVER(PARTITION BY order_id
-                              ORDER BY version DESC, event_time DESC, event_id DESC, source_file, source_row
-                              ) = 1
+                              ORDER BY version DESC, event_time DESC, event_id DESC, source_file, source_row) = 1
 ) s
 ON t.order_id = s.order_id
 WHEN MATCHED AND
