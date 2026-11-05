@@ -90,7 +90,7 @@ ORDER BY REFRESH_START_TIME DESC;
 -- ──────────────────────────────────────────────────────────────────────────────
 
 -- Teaching update targets Silver directly to isolate DT maintenance.
--- Restore it before returning to the event pipeline; do not call APPLY_EVENTS here.
+-- Restore it before returning to the event pipeline; do not call SP_APPLY_EVENTS here.
 
 UPDATE SILVER.ORDERS_CURRENT SET AMOUNT = 135 WHERE ORDER_ID = 'o1';
 

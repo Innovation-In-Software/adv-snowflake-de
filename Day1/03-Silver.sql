@@ -3,7 +3,7 @@
 1) Inspect Bronze input and define the Silver target tables
 2) Develop each SELECT with real rows before creating its view
 3) Run the processing statements individually and demonstrate ROLLBACK
-4) Combine the verified steps into APPLY_EVENTS and commit the real result
+4) Combine the verified steps into SP_APPLY_EVENTS and commit the real result
 5) Repeat execution and verify that the accepted state remains unchanged
 ----------------------------------------------------------------------------------*/
 
@@ -264,7 +264,7 @@ WHERE reject_reason IS NOT NULL;
 
 -- Reuse the conflict check reviewed above. This view lists conflicting event IDs;
 -- it neither removes duplicates nor chooses which conflicting payload is correct.
--- APPLY_EVENTS checks this view and rolls back if any conflict is present.
+-- SP_APPLY_EVENTS checks this view and rolls back if any conflict is present.
 
 CREATE OR REPLACE VIEW VW_EVENT_CONFLICTS AS
 SELECT event_id
@@ -387,7 +387,7 @@ FROM BRONZE.EVENTS_STREAM;
 -- Create the procedure outside any explicit transaction. It owns its transaction.
 -- EXECUTE AS OWNER supplies the owner's privileges to the controlled operation.
 
-CREATE OR REPLACE PROCEDURE APPLY_EVENTS()
+CREATE OR REPLACE PROCEDURE SP_APPLY_EVENTS()
 RETURNS STRING
 LANGUAGE SQL
 EXECUTE AS OWNER
@@ -457,7 +457,7 @@ $$;
 -- STEP 7: Call the procedure, verify the committed result, then repeat.
 -- ──────────────────────────────────────────────────────────────────────────────
 
-CALL APPLY_EVENTS();
+CALL SP_APPLY_EVENTS();
 
 SELECT *
 FROM ORDERS_CURRENT
@@ -478,7 +478,7 @@ FROM BRONZE.EVENTS_STREAM;
 
 -- Call again with no new deliveries. The accepted state should remain unchanged.
 
-CALL APPLY_EVENTS();
+CALL SP_APPLY_EVENTS();
 
 SELECT COUNT(*) AS inbox_rows
 FROM EVENT_INBOX;

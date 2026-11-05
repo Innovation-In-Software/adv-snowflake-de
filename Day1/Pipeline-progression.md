@@ -49,7 +49,7 @@ EVENTS_RAW -> EVENTS_STREAM -- INSERT --> EVENT_INBOX
                                             v
                                       ORDERS_CURRENT
 
-APPLY_EVENTS wraps INSERT + conflict guard + MERGE in one transaction.
+SP_APPLY_EVENTS wraps INSERT + conflict guard + MERGE in one transaction.
 ```
 
 Define both Silver tables first. Develop SELECTs before their views, then demonstrate DML with ROLLBACK before creating the reusable procedure. Identical deliveries remain in the inbox. QUALIFY selects one latest valid state per order; conflicting reuse of an event ID stops processing. e3 remains BAD_AMOUNT; e6 establishes a later valid o3 state. First-pass committed counts: inbox 8, current 3, rejects 1, pending 0; active value 150.
@@ -60,14 +60,14 @@ Define both Silver tables first. Develop SELECTs before their views, then demons
 DATA PATH
 update.json.gz (two e8 deliveries)
   -> ORDERS_PIPE -> EVENTS_RAW -> EVENTS_STREAM
-  -> APPLY_EVENTS -> EVENT_INBOX -> validation / selection
+  -> SP_APPLY_EVENTS -> EVENT_INBOX -> validation / selection
   -> ORDERS_CURRENT -> GOLD.VW_ORDER_METRICS (live view)
                  \
                   -> aggregate snapshot -> OPS.RUN_AUDIT
 
 CONTROL PATH
 ALTER PIPE ... REFRESH PREFIX = 'update' -> request Snowpipe load
-EXECUTE TASK APPLY_TASK -> check WHEN -> CALL APPLY_EVENTS
+EXECUTE TASK APPLY_TASK -> check WHEN -> CALL SP_APPLY_EVENTS
                                       |
                               successful completion
                                       v
@@ -114,10 +114,10 @@ REGION_REFERENCE -- join ------+
                                v
                          ORDERS_CURRENT -> Gold
 
-APPLY_TASK -> APPLY_EVENTS_SNOWPARK -> AUDIT_TASK -> RUN_AUDIT
+APPLY_TASK -> SP_APPLY_EVENTS_SNOWPARK -> AUDIT_TASK -> RUN_AUDIT
 ```
 
-Define reference, transformed-event and candidate tables before filling or processing them. Python executes inside Snowflake. Develop the transformations first in `06-Snowpark-Development.ipynb`, then deploy identical functions as APPLY_EVENTS_SNOWPARK and replace the task entry point. The unpinned Snowpark package resolves at procedure creation. The optional pipeline notebook is a separately gated alternative consumer, not part of this task graph. One synthetic raw replay bypasses stage/Snowpipe intentionally to isolate business idempotency. Expected final raw/inbox=11, current=3, rejects=1, pending=0, active value=165. Compare SQL and Snowpark results before calling the deployment successful.
+Define reference, transformed-event and candidate tables before filling or processing them. Python executes inside Snowflake. Develop the transformations first in `06-Snowpark-Development.ipynb`, then deploy identical functions as SP_APPLY_EVENTS_SNOWPARK and replace the task entry point. The unpinned Snowpark package resolves at procedure creation. The optional pipeline notebook is a separately gated alternative consumer, not part of this task graph. One synthetic raw replay bypasses stage/Snowpipe intentionally to isolate business idempotency. Expected final raw/inbox=11, current=3, rejects=1, pending=0, active value=165. Compare SQL and Snowpark results before calling the deployment successful.
 
 ## Table-first teaching sequence
 

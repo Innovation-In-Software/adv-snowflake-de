@@ -45,7 +45,7 @@ CREATE TASK APPLY_TASK
     SCHEDULE = '5 MINUTE'
     WHEN SYSTEM$STREAM_HAS_DATA('ADV_ORDERS.BRONZE.EVENTS_STREAM')
 AS
-CALL ADV_ORDERS.SILVER.APPLY_EVENTS();
+CALL ADV_ORDERS.SILVER.SP_APPLY_EVENTS();
 
 CREATE TASK AUDIT_TASK
     WAREHOUSE = ADV_WH
@@ -129,5 +129,5 @@ EXECUTE TASK APPLY_TASK;
 -- ──────────────────────────────────────────────────────────────────────────────
 -- If any task fails, inspect owner privileges and query ID; do not replace tables
 -- or recreate the stream. Retry only after fixing the cause and checking offsets.
--- Manual CALL SILVER.APPLY_EVENTS() is a transformation fallback, not proof
+-- Manual CALL SILVER.SP_APPLY_EVENTS() is a transformation fallback, not proof
 -- that the task graph succeeded. Record which path was used.
