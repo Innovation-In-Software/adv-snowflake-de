@@ -1,0 +1,3 @@
+cryptography>=42
+snowflake-connector-python>=3.12
+python-dotenv>=1.0

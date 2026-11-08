@@ -10,6 +10,14 @@ Each person needs browser access, a SQL worksheet, and the ability to use ACCOUN
 
 Run 00-Environment.sql once, in sections. It creates ADV_LAB, ADV_WH, ADV_ORDERS and four schemas. No passwords are embedded. Setup deliberately avoids OR REPLACE and broad grants to PUBLIC. A name collision means stop and inspect, not overwrite.
 
+## Required local Python connection and key setup
+
+The SQL labs and Snowflake-hosted notebooks use the active Snowflake session. The required local Python setup verifies password connectivity, then registers a key pair for local Python connections. Copy the repository-root `.env.example` to `.env` and set `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER` and `SNOWFLAKE_PASSWORD`. The role, warehouse, database, schema and private-key path have classroom defaults in the example. Keep `.env` local; Git ignores it.
+
+Install dependencies with `python -m pip install -r SetUp/requirements.txt`. Run `python SetUp/test_connection.py` and proceed only after it confirms password connectivity. Then run `python SetUp/key_pair_setup.py`; it generates an unencrypted PKCS#8 private key outside the repository, registers its public key by connecting as `ACCOUNTADMIN`, and tests a second connection using the new key pair with the classroom role and context. Both scripts use `python-dotenv` to search upward from the script location for `.env`, so they can be launched from different working directories. The key script refuses to overwrite existing key files. Keep the private key private and never upload or commit it. For production use, encrypting the private key with a passphrase adds protection; the corresponding code option is commented in `key_pair_setup.py`.
+
+Windows is the supported student environment for local Python setup during class. The default key path uses `~` and is intended to resolve to the user's home directory; students using macOS or Linux may need platform-specific help with Python installation, dependency setup or file permissions. Provide that assistance during class as needed; cross-platform setup has not been rehearsed as a required path.
+
 Warehouse auto-suspend limits idle warehouse use; it is not a cap on Snowpipe or total account charges. Monitor classroom consumption and pause ingestion/tasks at day end. Do not promise a fixed lab cost before rehearsal.
 
 Lab 01 creates `ADV_ORDERS.BRONZE.ORDER_EVENTS_SOURCE`, a synthetic mock order-event source table with `batch` and `payload` columns. Its payloads are unloaded into staged JSON files for ingestion; it is separate from the Bronze ingestion destination.

@@ -1,3 +1,12 @@
 # Snowflake Workspaces (managed) - per-user Notebook settings
 .snowflake/settings.json
 .snowflake/.folder
+
+# Local Snowflake credentials and generated private keys
+.env
+.env.*
+!.env.example
+*.p8
+*.p12
+*.pem
+*.key

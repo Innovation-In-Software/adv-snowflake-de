@@ -93,3 +93,45 @@ FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY_BY_SESSION(RESULT_LIMIT => 100))
 WHERE QUERY_TAG = 'ADV_2026_DAY1'
   AND START_TIME >= DATEADD('hour', -1, CURRENT_TIMESTAMP())
 ORDER BY START_TIME DESC;
+
+/*
+--------------------------------------------------------------------------------
+LOCAL WORKSTATION SETUP — PAUSE HERE BEFORE CONTINUING
+--------------------------------------------------------------------------------
+
+1. Make sure you have cloned the ENTIRE course repository to your local
+   workstation. The repository root must contain .env.example and the SetUp
+   folder. A Snowflake Git Workspace alone is not the local folder needed here.
+
+2. In the repository root, copy .env.example to a file named .env. Edit .env
+   and set these three values:
+
+       SNOWFLAKE_ACCOUNT=<your Snowflake account identifier>
+       SNOWFLAKE_USER=<your Snowflake username>
+       SNOWFLAKE_PASSWORD=<your Snowflake password>
+
+   Leave the classroom defaults for role, warehouse, database, schema and key
+   path. Do not commit or share .env.
+
+3. Make sure Python is installed. From a terminal opened in the repository
+   root, install the required packages:
+
+       python -m pip install -r SetUp/requirements.txt
+
+4. Verify username/password connectivity before changing the user's
+   authentication configuration:
+
+       python SetUp/test_connection.py
+
+   Continue only after the script confirms the connected user and account.
+
+5. Generate and register a key pair:
+
+       python SetUp/key_pair_setup.py
+
+   This script saves an unencrypted private key outside the repository, then
+   connects as ACCOUNTADMIN and registers its public key on your user. It does
+   not print your password. Keep the private key private. Windows is the
+   supported class setup; ask the instructor for help if using another OS.
+--------------------------------------------------------------------------------
+*/
