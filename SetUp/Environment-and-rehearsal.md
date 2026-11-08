@@ -8,7 +8,7 @@ Use one fresh, dedicated Snowflake training account per person, including the in
 
 Each person needs browser access, a SQL worksheet, and the ability to use ACCOUNTADMIN for the short, identical provisioning script. Return immediately to ADV_LAB for labs. In organization-managed accounts an authorized administrator must provision equivalent isolated resources per learner; this package's fixed names MUST NOT be used by multiple learners in one account. That alternative has not been authored or tested here.
 
-Run 00-Environment.sql once, in sections. It creates ADV_LAB, ADV_WH, ADV_ORDERS and four schemas. No passwords are embedded. Setup deliberately avoids OR REPLACE and broad grants to PUBLIC. A name collision means stop and inspect, not overwrite.
+Run 00-Environment.sql in sections for initial setup or a complete lab reset. It preserves ADV_LAB with CREATE ROLE IF NOT EXISTS, recreates ADV_WH and ADV_ORDERS with CREATE OR REPLACE, reapplies the required grants, and creates four fresh schemas. Each full run removes the previous lab database contents and restores the warehouse settings. After setup, restart from Lab 01. No passwords are embedded and no broad grants are made to PUBLIC.
 
 ## Required local Python connection and key setup
 
@@ -34,7 +34,7 @@ On a fresh account execute 00, then Day1 01–06, Day2 07–11 and Day3 13–18,
 
 ## Reset boundaries
 
-Do not reset midway to hide a failed checkpoint. Diagnose the stage, COPY history, inbox and stream first. For a complete rehearsal reset, finish in-flight tasks, run 99, confirm the dedicated account and exact ADV_ORDERS database, then deliberately remove only that lab database/warehouse/role through your normal account administration process. Reset DDL is not part of the student sequence. Never truncate Bronze or recreate a stream while preserving downstream state and call that a replay test.
+Do not reset midway to hide a failed checkpoint. Diagnose the stage, COPY history, inbox and stream first. For a complete rehearsal reset, finish in-flight tasks, run 99, confirm the dedicated training account, then rerun 00-Environment.sql from the beginning. This recreates ADV_WH and ADV_ORDERS and its four schemas while preserving ADV_LAB and the user's authentication configuration. Restart the labs from Lab 01. Never truncate Bronze or recreate a stream while preserving downstream state and call that a replay test.
 
 If a lesson is interrupted, resume at its checkpoint. New worksheets must execute that script's USE statements. Keep identifiers fixed within each dedicated account.
 

@@ -8,24 +8,26 @@
 -- Advanced Snowflake | Day 1 | 00: identical isolated learning environments
 -- Run one section at a time; account-specific readiness still applies.
 -- Use a NEW dedicated training account.
+-- Rerunning this script resets ADV_WH and ADV_ORDERS, including all lab data
+-- and database objects. After setup completes, restart the labs from Lab 01.
 -- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 1: Everyone provisions the same limited lab role using their trial admin.
 -- ──────────────────────────────────────────────────────────────────────────────
 USE ROLE ACCOUNTADMIN;
 
-CREATE ROLE ADV_LAB;
+CREATE ROLE IF NOT EXISTS ADV_LAB;
 
 SET student_user = CURRENT_USER();
 GRANT ROLE ADV_LAB TO USER IDENTIFIER($student_user);
 
-CREATE WAREHOUSE ADV_WH 
+CREATE OR REPLACE WAREHOUSE ADV_WH
  WAREHOUSE_SIZE='XSMALL' 
  ENABLE_QUERY_ACCELERATION=FALSE
  AUTO_SUSPEND=60
  AUTO_RESUME=TRUE 
  INITIALLY_SUSPENDED=TRUE;
  
-CREATE DATABASE ADV_ORDERS;
+CREATE OR REPLACE DATABASE ADV_ORDERS;
 
 GRANT OWNERSHIP ON DATABASE ADV_ORDERS TO ROLE ADV_LAB COPY CURRENT GRANTS; --Preserves existing grants on that database during the ownership transfer.
 
