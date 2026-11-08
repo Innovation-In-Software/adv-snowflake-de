@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import argparse
 import base64
 import hashlib
 import gzip
@@ -34,8 +33,7 @@ def make_jwt(account: str, user: str, private_key) -> str:
     # claims. These parts are encoded, not encrypted: never put secrets in them.
     # RS256 signs with our private key. Snowflake verifies the signature with the
     # public key registered on this user. The private key is never sent.
-    # Both a bare locator (XY12345) and ORGNAME-ACCOUNTNAME are valid here.
-    # main() obtains both from Snowflake; neither includes region/cloud suffixes.
+    # SNOWFLAKE_ACCOUNT in .env supplies the ORGNAME-ACCOUNTNAME identifier.
     # Snowflake requires uppercase account/user claims and hyphens for periods.
     # Reference: https://docs.snowflake.com/en/developer-guide/sql-api/authenticating
     account_claim = account.replace(".", "-").upper()
@@ -111,12 +109,6 @@ def wait_for_rows(cursor, base_url, headers):
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--jwt-account", choices=("locator", "org-account"), default="locator",
-        help="Account identifier in JWT claims (default: locator). The HTTP host stays unchanged.",
-    )
-    args = parser.parse_args()
     load_dotenv()
 
     account = required_env("SNOWFLAKE_ACCOUNT")
@@ -133,14 +125,6 @@ def main() -> None:
                       "schema" :"BRONZE", "login_timeout": 30}
 
     with snowflake.connector.connect(**connect_params) as connection, connection.cursor() as cursor:
-        # CURRENT_ACCOUNT returns a locator; the other two functions supply
-        # the human-readable organization-account identifier for the SAME account.
-        locator, organization, account_name, current_user = cursor.execute(
-            "SELECT CURRENT_ACCOUNT(), CURRENT_ORGANIZATION_NAME(), "
-            "CURRENT_ACCOUNT_NAME(), CURRENT_USER()"
-        ).fetchone()
-        jwt_account = locator if args.jwt_account == "locator" else f"{organization}-{account_name}"
-        print(f"JWT account format: {args.jwt_account}; identifier: {jwt_account.upper()}")
         rows = cursor.execute(
             "SELECT PAYLOAD FROM ADV_ORDERS.BRONZE.VW_ORDER_EVENTS_SOURCE "
             "WHERE BATCH = 2 ORDER BY PAYLOAD:event_id::STRING"
@@ -168,7 +152,7 @@ def main() -> None:
         # The token authenticates the user; the user's DEFAULT_ROLE authorizes
         # pipe access. Never print the token: anyone holding it can use it until expiry.
         headers = {
-            "Authorization": "Bearer " + make_jwt(jwt_account, current_user, private_key),
+            "Authorization": "Bearer " + make_jwt(account, user, private_key),
             "Content-Type": "application/json", "Accept": "application/json",
         }
 

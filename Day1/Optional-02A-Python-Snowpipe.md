@@ -55,17 +55,8 @@ References: [Snowpipe REST workflow and default-role authentication](https://doc
 
 Live account rehearsal of this revised extension is still required.
 
-## Compare JWT account identifiers
+## JWT authentication
 
 JWT means JSON Web Token: an encoded header and identity/time claims plus a digital signature. Our private key signs the token; Snowflake verifies it using the registered public key. The private key is not transmitted. The token is a short-lived credential, not encrypted storage for secrets.
 
-Run the same script with each claim format:
-
-```powershell
-python Day1/Optional-02A-PythonSnowpipe.py --jwt-account locator
-python Day1/Optional-02A-PythonSnowpipe.py --jwt-account org-account
-```
-
-The script obtains both identifiers from Snowflake and prints the chosen identifier, never the token. The first option uses CURRENT_ACCOUNT(); the second combines CURRENT_ORGANIZATION_NAME() and CURRENT_ACCOUNT_NAME() with a hyphen. Both represent the same account. The connection account and REST hostname still come from SNOWFLAKE_ACCOUNT in .env.
-
-Expect successful REST authentication in both runs. The same staged filename is submitted, so the second run should report it skipped and Bronze should remain at 12 at this checkpoint. No argument defaults to locator. Both modes still require live rehearsal in your account.
+The script uses SNOWFLAKE_ACCOUNT (organization-account) and SNOWFLAKE_USER from .env for JWT claims. The same account setting is used for the connector and REST hostname. Run the script without command-line options.
