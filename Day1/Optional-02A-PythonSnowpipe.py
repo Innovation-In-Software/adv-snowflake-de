@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import base64
 import hashlib
 import gzip
@@ -28,9 +29,18 @@ def required_env(name: str) -> str:
 
 
 def make_jwt(account: str, user: str, private_key) -> str:
-    # Use the account locator returned by CURRENT_ACCOUNT for JWT claims.
-    account_claim = account.split(".", 1)[0].upper()
+    # JWT (JSON Web Token) consists of header.payload.signature.
+    # The header names the signing algorithm; the payload carries identity/time
+    # claims. These parts are encoded, not encrypted: never put secrets in them.
+    # RS256 signs with our private key. Snowflake verifies the signature with the
+    # public key registered on this user. The private key is never sent.
+    # Both a bare locator (XY12345) and ORGNAME-ACCOUNTNAME are valid here.
+    # main() obtains both from Snowflake; neither includes region/cloud suffixes.
+    # Snowflake requires uppercase account/user claims and hyphens for periods.
+    # Reference: https://docs.snowflake.com/en/developer-guide/sql-api/authenticating
+    account_claim = account.replace(".", "-").upper()
     user_claim = user.upper()
+
     public_der = private_key.public_key().public_bytes(
         serialization.Encoding.DER,
         serialization.PublicFormat.SubjectPublicKeyInfo,
@@ -38,12 +48,13 @@ def make_jwt(account: str, user: str, private_key) -> str:
     fingerprint = "SHA256:" + base64.b64encode(hashlib.sha256(public_der).digest()).decode("ascii")
     qualified_user = f"{account_claim}.{user_claim}"
     now = datetime.now(timezone.utc)
+
     return jwt.encode(
         {
-            "iss": f"{qualified_user}.{fingerprint}",
-            "sub": qualified_user,
-            "iat": now,
-            "exp": now + timedelta(minutes=10),
+            "iss": f"{qualified_user}.{fingerprint}",  # Issuer: identity + public-key fingerprint
+            "sub": qualified_user,  # Subject: the account and user being authenticated
+            "iat": now,  # Issued at (UTC); PyJWT encodes this as a numeric timestamp
+            "exp": now + timedelta(minutes=10),  # Short-lived credential: expires in 10 minutes
         },
         private_key,
         algorithm="RS256",
@@ -66,8 +77,10 @@ def submit_file(base_url, headers):
     )
     response.raise_for_status()
     result = response.json()
+
     if result.get("responseCode") != "SUCCESS":
         raise RuntimeError(f"Snowpipe rejected the request: {result}")
+
     print("Snowpipe accepted the request; this does not confirm loading.")
     print(json.dumps(result, indent=2))
 
@@ -77,72 +90,95 @@ def wait_for_rows(cursor, base_url, headers):
     while time.monotonic() < deadline:
         response = requests.get(base_url + "/insertReport", headers=headers, timeout=30)
         response.raise_for_status()
+
         for entry in response.json().get("files", []):
             if entry.get("path") == FILE_NAME:
                 if entry.get("errorsSeen", 0) or entry.get("status") in ("LOAD_FAILED", "PARTIALLY_LOADED"):
                     raise RuntimeError(f"Snowpipe load error: {entry}")
+
         # Durable verification also works on reruns after the REST report expires.
-        count = cursor.execute(
-            "SELECT COUNT(*) FROM ADV_ORDERS.BRONZE.EVENTS_RAW WHERE SOURCE_FILE = %s",
-            (SOURCE_FILE,),
-        ).fetchone()[0]
+        count = cursor.execute("SELECT COUNT(*) FROM ADV_ORDERS.BRONZE.EVENTS_RAW WHERE SOURCE_FILE = %s", (SOURCE_FILE,)).fetchone()[0]
+
         if count == 4:
             print("Confirmed four replay deliveries in EVENTS_RAW.")
             return
+
         if count > 4:
             raise RuntimeError(f"Expected four rows for {SOURCE_FILE}, found {count}.")
+
         time.sleep(5)
     raise TimeoutError("Load not confirmed within five minutes. Inspect COPY_HISTORY and SYSTEM$PIPE_STATUS; do not rename the file to retry.")
 
 
 def main() -> None:
-    load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--jwt-account", choices=("locator", "org-account"), default="locator",
+        help="Account identifier in JWT claims (default: locator). The HTTP host stays unchanged.",
+    )
+    args = parser.parse_args()
+    load_dotenv()
+
     account = required_env("SNOWFLAKE_ACCOUNT")
     user = required_env("SNOWFLAKE_USER")
     key_path = Path(required_env("SNOWFLAKE_PRIVATE_KEY_FILE")).expanduser()
+
     if not key_path.is_absolute():
         key_path = (Path(__file__).resolve().parents[1] / key_path).resolve()
+
     private_key = serialization.load_pem_private_key(key_path.read_bytes(), password=None)
-    connection = snowflake.connector.connect(
-        account=account, user=user, private_key_file=str(key_path),
-        role="ADV_LAB", warehouse=os.getenv("SNOWFLAKE_WAREHOUSE", "ADV_WH").strip(),
-        database="ADV_ORDERS", schema="BRONZE", login_timeout=30,
-    )
-    try:
-        with connection.cursor() as cursor:
-            # Use the server's account locator and user identity for JWT claims.
-            locator, current_user = cursor.execute("SELECT CURRENT_ACCOUNT(), CURRENT_USER()").fetchone()
-            rows = cursor.execute(
-                "SELECT PAYLOAD FROM ADV_ORDERS.BRONZE.VW_ORDER_EVENTS_SOURCE "
-                "WHERE BATCH = 2 ORDER BY PAYLOAD:event_id::STRING"
-            ).fetchall()
-            if len(rows) != 4:
-                raise RuntimeError("Expected four batch-2 events; complete Lab 01 first.")
-            with tempfile.TemporaryDirectory(prefix="snowpipe_lab_") as temp_dir:
-                local_file = Path(temp_dir) / FILE_NAME
-                payloads = [json.loads(r[0]) if isinstance(r[0], str) else r[0] for r in rows]
-                content = "".join(json.dumps(p, separators=(",", ":")) + "\n" for p in payloads)
-                local_file.write_bytes(gzip.compress(content.encode("utf-8"), mtime=0))
-                uri = ("file://" + local_file.as_posix()).replace("'", "''")
-                cursor.execute(
-                    f"PUT '{uri}' @ADV_ORDERS.BRONZE.EVENTS_STAGE/batch2/ "
-                    "AUTO_COMPRESS=FALSE OVERWRITE=FALSE"
-                )
-                upload = cursor.fetchone()
-                if upload is None or upload[6] not in ("UPLOADED", "SKIPPED"):
-                    raise RuntimeError(f"Upload failed: {upload}")
-                print(f"Stage upload: {upload[6]} ({SOURCE_FILE})")
-            headers = {
-                "Authorization": "Bearer " + make_jwt(locator, current_user, private_key),
-                "Content-Type": "application/json", "Accept": "application/json",
-            }
-            base_url = f"https://{account}.snowflakecomputing.com/v1/data/pipes/{PIPE}"
-            submit_file(base_url, headers)
-            wait_for_rows(cursor, base_url, headers)
-            total = cursor.execute("SELECT COUNT(*) FROM ADV_ORDERS.BRONZE.EVENTS_RAW").fetchone()[0]
-            print(f"Total Bronze rows: {total}; expected 12 immediately after Labs 02 and 02A.")
-    finally:
-        connection.close()
+
+    connect_params = {"account": account, "user": user, "private_key_file": str(key_path),
+                      "role": "ADV_LAB", "warehouse": "ADV_WH", "database": "ADV_ORDERS",
+                      "schema" :"BRONZE", "login_timeout": 30}
+
+    with snowflake.connector.connect(**connect_params) as connection, connection.cursor() as cursor:
+        # CURRENT_ACCOUNT returns a locator; the other two functions supply
+        # the human-readable organization-account identifier for the SAME account.
+        locator, organization, account_name, current_user = cursor.execute(
+            "SELECT CURRENT_ACCOUNT(), CURRENT_ORGANIZATION_NAME(), "
+            "CURRENT_ACCOUNT_NAME(), CURRENT_USER()"
+        ).fetchone()
+        jwt_account = locator if args.jwt_account == "locator" else f"{organization}-{account_name}"
+        print(f"JWT account format: {args.jwt_account}; identifier: {jwt_account.upper()}")
+        rows = cursor.execute(
+            "SELECT PAYLOAD FROM ADV_ORDERS.BRONZE.VW_ORDER_EVENTS_SOURCE "
+            "WHERE BATCH = 2 ORDER BY PAYLOAD:event_id::STRING"
+        ).fetchall()
+
+        if len(rows) != 4:
+            raise RuntimeError("Expected four batch-2 events; complete Lab 01 first.")
+
+        with tempfile.TemporaryDirectory(prefix="snowpipe_lab_") as temp_dir:
+            local_file = Path(temp_dir) / FILE_NAME
+            payloads = [json.loads(r[0]) if isinstance(r[0], str) else r[0] for r in rows]
+            content = "".join(json.dumps(p, separators=(",", ":")) + "\n" for p in payloads)
+            local_file.write_bytes(gzip.compress(content.encode("utf-8"), mtime=0))
+            uri = ("file://" + local_file.as_posix()).replace("'", "''")
+
+            cursor.execute(f"PUT '{uri}' @ADV_ORDERS.BRONZE.EVENTS_STAGE/batch2/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE")
+            upload = cursor.fetchone()
+
+            if upload is None or upload[6] not in ("UPLOADED", "SKIPPED"):
+                raise RuntimeError(f"Upload failed: {upload}")
+
+            print(f"Stage upload: {upload[6]} ({SOURCE_FILE})")
+
+        # Bearer sends the signed token as the request credential over HTTPS.
+        # The token authenticates the user; the user's DEFAULT_ROLE authorizes
+        # pipe access. Never print the token: anyone holding it can use it until expiry.
+        headers = {
+            "Authorization": "Bearer " + make_jwt(jwt_account, current_user, private_key),
+            "Content-Type": "application/json", "Accept": "application/json",
+        }
+
+        base_url = f"https://{account}.snowflakecomputing.com/v1/data/pipes/{PIPE}"
+        submit_file(base_url, headers)
+
+        wait_for_rows(cursor, base_url, headers)
+
+        total = cursor.execute("SELECT COUNT(*) FROM ADV_ORDERS.BRONZE.EVENTS_RAW").fetchone()[0]
+        print(f"Total Bronze rows: {total}; expected 12 immediately after Labs 02 and 02A.")
 
 
 if __name__ == "__main__":

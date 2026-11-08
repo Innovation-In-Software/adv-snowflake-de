@@ -34,7 +34,7 @@ SELECT COUNT(*) FROM EVENTS_RAW;    -- 12
 SELECT COUNT(*) FROM EVENTS_STREAM; -- 12 before Lab 03 consumes it
 ```
 
-Expect three files with four rows each. The new filename demonstrates duplicate business events in another delivery. Run the Python script again with the SAME filename to demonstrate Snowpipe file tracking: during this rehearsal the total remains 12. PUT does not overwrite the staged file. Do not rename it on retry, delete Bronze rows, or recreate the pipe. File tracking has finite retention; this is a same-rehearsal exercise, not a permanent deduplication guarantee.
+Expect three files with four rows each. The new filename demonstrates duplicate business events in another delivery. Run the Python script again with the SAME filename to demonstrate Snowpipe file tracking: during this rehearsal the total remains 12. PUT uses OVERWRITE=TRUE to allow replacing the staged file; unchanged content may still be skipped. Replacing a staged file does not clear Snowpipe file tracking. Do not rename it on retry, delete Bronze rows, or recreate the pipe. File tracking has finite retention; this is a same-rehearsal exercise, not a permanent deduplication guarantee.
 
 On failure or timeout, inspect `SYSTEM$PIPE_STATUS` and `INFORMATION_SCHEMA.COPY_HISTORY` for `EVENTS_RAW`. A timeout does not cancel the queued load. Fix the issue and retry the same filename. Do not continue to Lab 03 until all four rows are confirmed.
 
@@ -54,3 +54,18 @@ Lab 02B continues to use its separate `DIR_EVENTS_STAGE` and `DIR_EVENTS_RAW`. I
 References: [Snowpipe REST workflow and default-role authentication](https://docs.snowflake.com/en/user-guide/data-load-snowpipe-rest-overview), [REST endpoints and file paths](https://docs.snowflake.com/en/user-guide/data-load-snowpipe-rest-apis).
 
 Live account rehearsal of this revised extension is still required.
+
+## Compare JWT account identifiers
+
+JWT means JSON Web Token: an encoded header and identity/time claims plus a digital signature. Our private key signs the token; Snowflake verifies it using the registered public key. The private key is not transmitted. The token is a short-lived credential, not encrypted storage for secrets.
+
+Run the same script with each claim format:
+
+```powershell
+python Day1/Optional-02A-PythonSnowpipe.py --jwt-account locator
+python Day1/Optional-02A-PythonSnowpipe.py --jwt-account org-account
+```
+
+The script obtains both identifiers from Snowflake and prints the chosen identifier, never the token. The first option uses CURRENT_ACCOUNT(); the second combines CURRENT_ORGANIZATION_NAME() and CURRENT_ACCOUNT_NAME() with a hyphen. Both represent the same account. The connection account and REST hostname still come from SNOWFLAKE_ACCOUNT in .env.
+
+Expect successful REST authentication in both runs. The same staged filename is submitted, so the second run should report it skipped and Bronze should remain at 12 at this checkpoint. No argument defaults to locator. Both modes still require live rehearsal in your account.
