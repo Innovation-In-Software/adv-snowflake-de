@@ -19,8 +19,8 @@ USE SCHEMA OPS;
 -- ============================================================================
 -- Run after Lab 04 has completed both tasks successfully, and BEFORE Lab 06.
 -- Expected delivery counts: EVENTS_RAW / EVENT_INBOX = 10 / 10, or 14 / 14 with 02A.
--- Set TRUE if you completed Optional 02A before Lab 03; keep FALSE if skipped.
-SET include_02a = FALSE;
+-- Planned sequence includes Lab 02A. Use FALSE only for a shortened rehearsal without it.
+SET include_02a = TRUE;
 SET expected_deliveries = (SELECT IFF($include_02a, 14, 10));
 -- Expected current orders (exactly 3 rows):
 -- order_id | event_id | version | event_time (UTC)      | status    | amount | region

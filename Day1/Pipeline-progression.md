@@ -29,16 +29,16 @@ EVENTS_STAGE / batch2 -- ORDERS_PIPE ------------> EVENTS_RAW
 
 Add EVENTS_RAW, its append-only stream and ORDERS_PIPE. Create the stream before loading the files. COPY loads batch1; Snowpipe loads batch2. AUTO_INGEST is FALSE; REFRESH is the explicit classroom loading trigger. The stream tracks the source table history rather than storing another copy of its rows. Expected first-pass Bronze count: 8; pending stream rows: 8.
 
-## Optional Lab 02A - Snowpipe REST API
+## Lab 02A - Snowpipe REST API
 
 ```text
 VW_ORDER_EVENTS_SOURCE batch 2 -> local JSON/GZIP -> PUT -> EVENTS_STAGE/batch2/
 Python insertFiles request (JWT) -> ORDERS_PIPE -> EVENTS_RAW
 ```
 
-The client submits `rest_api_replay.json.gz` relative to the pipe's batch2/ path. The new file adds four duplicate business-event deliveries: Bronze and pending stream counts become 12. Repeating the same filename during rehearsal tests file tracking. Silver retains the deliveries in its inbox but keeps the same current business state. See [02A](Optional-02A-Python-Snowpipe.md) for both checkpoint paths.
+The client submits `rest_api_replay.json.gz` relative to the pipe's batch2/ path. The new file adds four duplicate business-event deliveries: Bronze and pending stream counts become 12. Repeating the same filename during rehearsal tests file tracking. Silver retains the deliveries in its inbox but keeps the same current business state. See [02A](02A-Python-Snowpipe.md) for both checkpoint paths.
 
-## Optional Lab 02B - Directory-table triggered load
+## Lab 02B - Directory-table triggered load
 
 ```text
 DIR_EVENTS_STAGE -> directory table -> DIR_EVENTS_STAGE_STREAM
@@ -51,7 +51,7 @@ DIR_EVENTS_STAGE -> directory table -> DIR_EVENTS_STAGE_STREAM
                                          COPY INTO DIR_EVENTS_RAW
 ```
 
-The task starts after refreshed directory metadata changes. The procedure consumes the directory stream into `DIR_FILE_EVENTS`, then COPY scans the isolated stage; Snowflake load history skips files already loaded to the extension target. Suspend the optional task after the demonstration. This extension leaves core `EVENTS_RAW` unchanged.
+The task starts after refreshed directory metadata changes. The procedure consumes the directory stream into `DIR_FILE_EVENTS`, then COPY scans the isolated stage; Snowflake load history skips files already loaded to the extension target. Suspend the task after the demonstration. This extension leaves core `EVENTS_RAW` unchanged.
 
 ## Lab 03 - Bronze to current Silver state
 

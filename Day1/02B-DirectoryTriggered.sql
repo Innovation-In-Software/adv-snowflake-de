@@ -1,4 +1,4 @@
--- Optional Lab 02B | Directory table stream + triggered task
+-- Lab 02B | Directory table stream + triggered task
 -- Run after Labs 01-02. This branch uses an isolated stage and target and does
 -- not change EVENTS_RAW or the expected starting state for Lab 03.
 

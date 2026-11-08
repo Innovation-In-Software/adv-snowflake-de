@@ -92,7 +92,7 @@ ALTER PIPE BRONZE.ORDERS_PIPE REFRESH PREFIX = 'update';
 
 -- As in lab 02, REFRESH is used only as a bounded lab recovery trigger.
 
-SELECT COUNT(*) FROM BRONZE.EVENTS_RAW; -- wait for 10 (14 with Optional 02A) before continuing
+SELECT COUNT(*) FROM BRONZE.EVENTS_RAW; -- wait for 10 (14 with Lab 02A) before continuing
 
 SELECT COUNT(*) FROM BRONZE.EVENTS_STREAM; -- 2
 

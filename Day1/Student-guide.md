@@ -15,9 +15,9 @@ For each numbered step: instructor explains the purpose, executes it, pauses; ev
 
 ## Run order and pacing
 
-Run SetUp/00, then 01 → 02 → 03 → 04 → 05 → 06. Lab 01 exposes deterministic mock events through a view and unloads JSON files to an internal stage. Lab 02 remains the core ingestion sequence: manual `COPY INTO` for batch1 and bounded Snowpipe refresh for batch2.
+Run SetUp/00, then 01 → 02 → 02A → 02B → 03 → 04 → 05 → 06. Lab 01 exposes deterministic mock events through a view and unloads JSON files to an internal stage. Lab 02 remains the core ingestion sequence: manual `COPY INTO` for batch1 and bounded Snowpipe refresh for batch2.
 
-After Lab 02, [Optional Lab 02A](Optional-02A-Python-Snowpipe.md) uploads four duplicate event deliveries to the existing stage and submits the new file to `ORDERS_PIPE` through the Snowpipe REST API. This raises core Bronze and pending stream counts from 8 to 12. [Optional Lab 02B](Optional-02B-DirectoryTriggered.md) uses a separate stage and target for a directory-table stream and triggered task. Suspend the triggered task after 02B. Follow the 02A checkpoint table when taking that branch.
+After Lab 02, [Lab 02A](02A-Python-Snowpipe.md) uploads four duplicate event deliveries to the existing stage and submits the new file to `ORDERS_PIPE` through the Snowpipe REST API. This raises core Bronze and pending stream counts from 8 to 12. [Lab 02B](02B-DirectoryTriggered.md) uses a separate stage and target for a directory-table stream and triggered task. Suspend the triggered task after 02B. Follow the planned-sequence counts in the 02A checkpoint table.
 
 Continue with 03 → 04 → 05 → 06. Run 05 before 06 because acceptance expects 10 deliveries (14 with 02A); 06 adds one replay delivery, bringing the total to 11 (15 with 02A). Use Course-runbook.md for the revised proposed day schedule, including Snowpark and deployment time. Teaching durations have not yet been timed with a class.
 
