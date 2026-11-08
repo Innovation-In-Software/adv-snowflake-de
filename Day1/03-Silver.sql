@@ -19,6 +19,8 @@ USE SCHEMA SILVER;
 -- Run one statement or commented group at a time in the SAME worksheet/session.
 -- Pause at each result. The first-pass checkpoints assume the eight raw rows
 -- from Lab 02, an empty Silver inbox, and an unconsumed Bronze stream.
+-- With Optional 02A completed, every delivery-count checkpoint of 8 below is 12.
+-- Current orders, rejects, Gold values, and drained-stream checkpoints are unchanged.
 -- Tables use IF NOT EXISTS so rerunning setup preserves data and stream progress.
 -- On a later rerun, compare with your starting counts; do not delete accepted data.
 -- Views and the procedure use OR REPLACE to update reusable definitions.

@@ -17,9 +17,9 @@ For each numbered step: instructor explains the purpose, executes it, pauses; ev
 
 Run SetUp/00, then 01 → 02 → 03 → 04 → 05 → 06. Lab 01 exposes deterministic mock events through a view and unloads JSON files to an internal stage. Lab 02 remains the core ingestion sequence: manual `COPY INTO` for batch1 and bounded Snowpipe refresh for batch2.
 
-After Lab 02, two optional, isolated extensions compare other ingestion triggers: [Optional Lab 02A](Optional-02A-Python-SQLAPI.md) demonstrates local JSON creation/upload followed by a Snowflake SQL API COPY request; [Optional Lab 02B](Optional-02B-DirectoryTriggered.md) demonstrates a directory-table stream and triggered task. Their targets are separate from `EVENTS_RAW`, so either extension can be skipped without changing Lab 03's core starting counts. Suspend the triggered task after the 02B demonstration.
+After Lab 02, [Optional Lab 02A](Optional-02A-Python-Snowpipe.md) uploads four duplicate event deliveries to the existing stage and submits the new file to `ORDERS_PIPE` through the Snowpipe REST API. This raises core Bronze and pending stream counts from 8 to 12. [Optional Lab 02B](Optional-02B-DirectoryTriggered.md) uses a separate stage and target for a directory-table stream and triggered task. Suspend the triggered task after 02B. Follow the 02A checkpoint table when taking that branch.
 
-Continue with 03 → 04 → 05 → 06. Run 05 before 06 because acceptance expects ten deliveries; 06 adds a distinct eleventh replay delivery. Use Course-runbook.md for the revised proposed day schedule, including Snowpark and deployment time. Teaching durations have not yet been timed with a class.
+Continue with 03 → 04 → 05 → 06. Run 05 before 06 because acceptance expects 10 deliveries (14 with 02A); 06 adds one replay delivery, bringing the total to 11 (15 with 02A). Use Course-runbook.md for the revised proposed day schedule, including Snowpark and deployment time. Teaching durations have not yet been timed with a class.
 
 ## Lab 03 — develop the queries before making them reusable
 
@@ -35,7 +35,7 @@ Part A first states the expected pipeline data. Compare expected and actual cont
 2. Run its SQL setup section to establish the three destinations and region reference. Then develop the Python transformations cell by cell.
 3. Compare three candidates with the SQL baseline and run the reversible transaction trial. Assemble the handler from the verified functions.
 4. Continue in the same notebook: SQL cells create/call the Python 3.12 procedure and inspect its resolved package dependency. Snowpark is unpinned at creation.
-5. Switch the existing task graph using the notebook SQL cells. Pause for asynchronous completion, then verify raw/inbox=11, current=3 and active value=165. On rerun, the replay guard inserts nothing and an empty-stream task can be SKIPPED.
+5. Switch the existing task graph using the notebook SQL cells. Pause for asynchronous completion, then verify raw/inbox=11 (15 with 02A), current=3 and active value=165. On rerun, the replay guard inserts nothing and an empty-stream task can be SKIPPED.
 
 `Snowpark-OrderTransform.py` remains the complete reusable source for reference; the notebook deployment cell embeds identical source. It is not a separate required execution step. The former SQL companion is retained only in Archive/Lab06-before-consolidation. SQL remains sufficient for this business example; this lab teaches Snowpark APIs and development-to-deployment workflow.
 
@@ -48,9 +48,9 @@ Bronze holds immutable raw event payloads plus file lineage. Silver retains cons
 | Checkpoint | Raw | Inbox | Current orders | Rejects | Active orders / USD |
 |---|---:|---:|---:|---:|---|
 | After bulk batch1 | 4 | 0 | 0 | 0 | Not built |
-| After Snowpipe batch2 | 8 | 0 | 0 | 0 | Not built |
-| After SP_APPLY_EVENTS | 8 | 8 | 3 | 1 | 2 / 150 |
-| After task update | 10 | 10 | 3 | 1 | 2 / 165 |
+| After Snowpipe batch2 (before 02A) | 8 | 0 | 0 | 0 | Not built |
+| After SP_APPLY_EVENTS | 8 (12 with 02A) | 8 (12 with 02A) | 3 | 1 | 2 / 150 |
+| After task update | 10 (14 with 02A) | 10 (14 with 02A) | 3 | 1 | 2 / 165 |
 | After Snowpark replay | 11 | 11 | 3 | 1 | 2 / 165 |
 
 The duplicate e2 is identical. e3 has invalid amount text and remains a reject even after e6 supplies a later valid state for o3. The late e7 must not overwrite o1 version 2. Duplicate e8 must not double order value. An immutable event-ID payload conflict raises an exception and rolls back stream consumption; production conflict repair is outside this Day 1 implementation.

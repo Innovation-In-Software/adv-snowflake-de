@@ -18,7 +18,10 @@ USE SCHEMA OPS;
 -- PART A: ACCEPTANCE - compare the completed pipeline with the expected state.
 -- ============================================================================
 -- Run after Lab 04 has completed both tasks successfully, and BEFORE Lab 06.
--- Expected delivery counts: EVENTS_RAW = 10, EVENT_INBOX = 10.
+-- Expected delivery counts: EVENTS_RAW / EVENT_INBOX = 10 / 10, or 14 / 14 with 02A.
+-- Set TRUE if you completed Optional 02A before Lab 03; keep FALSE if skipped.
+SET include_02a = FALSE;
+SET expected_deliveries = (SELECT IFF($include_02a, 14, 10));
 -- Expected current orders (exactly 3 rows):
 -- order_id | event_id | version | event_time (UTC)      | status    | amount | region
 -- o1       | e4       | 2       | 2026-11-02 10:00:00   | PAID      | 120    | US
@@ -35,7 +38,8 @@ USE SCHEMA OPS;
 
 WITH expected AS
 (
-    SELECT column1 AS check_name, column2 AS expected_value
+    SELECT column1 AS check_name,
+           IFF(column1 IN ('Bronze rows', 'Inbox rows'), $expected_deliveries, column2) AS expected_value
     FROM VALUES
         ('Bronze rows', 10),
         ('Inbox rows', 10),

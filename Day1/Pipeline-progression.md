@@ -29,16 +29,14 @@ EVENTS_STAGE / batch2 -- ORDERS_PIPE ------------> EVENTS_RAW
 
 Add EVENTS_RAW, its append-only stream and ORDERS_PIPE. Create the stream before loading the files. COPY loads batch1; Snowpipe loads batch2. AUTO_INGEST is FALSE; REFRESH is the explicit classroom loading trigger. The stream tracks the source table history rather than storing another copy of its rows. Expected first-pass Bronze count: 8; pending stream rows: 8.
 
-## Optional Lab 02A - Client-driven SQL API load
+## Optional Lab 02A - Snowpipe REST API
 
 ```text
-VW_ORDER_EVENTS_SOURCE view -> local Python JSON files -> PUT -> API_EVENTS_STAGE
-                                                            |
-Python SQL API request (JWT) ------------------------------+-> COPY INTO
-                                                               API_EVENTS_RAW
+VW_ORDER_EVENTS_SOURCE batch 2 -> local JSON/GZIP -> PUT -> EVENTS_STAGE/batch2/
+Python insertFiles request (JWT) -> ORDERS_PIPE -> EVENTS_RAW
 ```
 
-The client creates local batch files, uploads them with the Python connector, then uses the Snowflake SQL API to request COPY. The extension uses an isolated stage and target and does not change Lab 03's `EVENTS_RAW` count.
+The client submits `rest_api_replay.json.gz` relative to the pipe's batch2/ path. The new file adds four duplicate business-event deliveries: Bronze and pending stream counts become 12. Repeating the same filename during rehearsal tests file tracking. Silver retains the deliveries in its inbox but keeps the same current business state. See [02A](Optional-02A-Python-Snowpipe.md) for both checkpoint paths.
 
 ## Optional Lab 02B - Directory-table triggered load
 
@@ -53,7 +51,7 @@ DIR_EVENTS_STAGE -> directory table -> DIR_EVENTS_STAGE_STREAM
                                          COPY INTO DIR_EVENTS_RAW
 ```
 
-The task starts after refreshed directory metadata changes. The procedure consumes the directory stream into `DIR_FILE_EVENTS`, then COPY scans the isolated stage; Snowflake load history skips files already loaded to the extension target. Suspend the optional task after the demonstration. This extension also leaves core `EVENTS_RAW` unchanged.
+The task starts after refreshed directory metadata changes. The procedure consumes the directory stream into `DIR_FILE_EVENTS`, then COPY scans the isolated stage; Snowflake load history skips files already loaded to the extension target. Suspend the optional task after the demonstration. This extension leaves core `EVENTS_RAW` unchanged.
 
 ## Lab 03 - Bronze to current Silver state
 
@@ -78,7 +76,7 @@ EVENTS_RAW -> EVENTS_STREAM -- INSERT --> EVENT_INBOX
 SP_APPLY_EVENTS wraps INSERT + conflict guard + MERGE in one transaction.
 ```
 
-Define both Silver tables first. Develop SELECTs before their views, then demonstrate DML with ROLLBACK before creating the reusable procedure. Identical deliveries remain in the inbox. QUALIFY selects one latest valid state per order; conflicting reuse of an event ID stops processing. e3 remains BAD_AMOUNT; e6 establishes a later valid o3 state. First-pass committed counts: inbox 8, current 3, rejects 1, pending 0; active value 150.
+Define both Silver tables first. Develop SELECTs before their views, then demonstrate DML with ROLLBACK before creating the reusable procedure. Identical deliveries remain in the inbox. QUALIFY selects one latest valid state per order; conflicting reuse of an event ID stops processing. e3 remains BAD_AMOUNT; e6 establishes a later valid o3 state. First-pass committed counts: inbox 8 (12 with 02A), current 3, rejects 1, pending 0; active value 150.
 
 ## Lab 04 - Task orchestration and Gold
 
@@ -101,7 +99,7 @@ EXECUTE TASK APPLY_TASK -> check WHEN -> CALL SP_APPLY_EVENTS
                               INSERT into RUN_AUDIT
 ```
 
-Add RUN_AUDIT, the Gold view and a two-task graph. The root stays suspended; the child is resumed. REFRESH and EXECUTE TASK are separate asynchronous requests, for ingestion and processing respectively. PREFIX is relative to the pipe stage path batch2/: it matches update.json.gz. Wait for raw=10, not ten minutes; stream=2 before processing. Then inspect the matching graph run until both tasks succeed. Expected result: current orders 3; US active orders 2 / value 165; stream 0. Gold is a view dependency, not another task. A later empty-stream execution tests the condition.
+Add RUN_AUDIT, the Gold view and a two-task graph. The root stays suspended; the child is resumed. REFRESH and EXECUTE TASK are separate asynchronous requests, for ingestion and processing respectively. PREFIX is relative to the pipe stage path batch2/: it matches update.json.gz. Wait for raw=10 (14 with 02A); stream=2 before processing. Then inspect the matching graph run until both tasks succeed. Expected result: current orders 3; US active orders 2 / value 165; stream 0. Gold is a view dependency, not another task. A later empty-stream execution tests the condition.
 
 ## Lab 05 - Acceptance and rollback evidence
 
@@ -116,7 +114,7 @@ STREAM_DEMO -> STREAM_DEMO_CHANGES -> STREAM_DEMO_SINK
                            INSERT inside BEGIN ... ROLLBACK
 ```
 
-Part A states the expected data, shows expected/actual control totals and uses INTERSECT to display all matching rows: 3 current orders, 1 Gold row and 1 rejected event. Row-count controls must also pass, because INTERSECT alone does not expose extra actual rows. Part B is a separate helper demonstration; create its disposable tables and stream immediately before that demonstration, after acceptance. After rollback the demonstration stream still exposes its one inserted row and the sink has zero rows. No new business-processing stage is added. Run before Lab 06: acceptance expects raw/inbox=10.
+Part A states the expected data, shows expected/actual control totals and uses INTERSECT to display all matching rows: 3 current orders, 1 Gold row and 1 rejected event. Row-count controls must also pass, because INTERSECT alone does not expose extra actual rows. Part B is a separate helper demonstration; create its disposable tables and stream immediately before that demonstration, after acceptance. After rollback the demonstration stream still exposes its one inserted row and the sink has zero rows. No new business-processing stage is added. Run before Lab 06: acceptance expects raw/inbox=10 (14 with 02A).
 
 ## Lab 06 - Snowpark development and deployment
 
@@ -143,7 +141,7 @@ REGION_REFERENCE -- join ------+
 APPLY_TASK -> SP_APPLY_EVENTS_SNOWPARK -> AUDIT_TASK -> RUN_AUDIT
 ```
 
-Define reference, transformed-event and candidate tables before filling or processing them. Python executes inside Snowflake. Develop the transformations first in `06-Snowpark-Development.ipynb`, then deploy identical functions as SP_APPLY_EVENTS_SNOWPARK and replace the task entry point. The unpinned Snowpark package resolves at procedure creation. The optional pipeline notebook is a separately gated alternative consumer, not part of this task graph. One synthetic raw replay bypasses stage/Snowpipe intentionally to isolate business idempotency. Expected final raw/inbox=11, current=3, rejects=1, pending=0, active value=165. Compare SQL and Snowpark results before calling the deployment successful.
+Define reference, transformed-event and candidate tables before filling or processing them. Python executes inside Snowflake. Develop the transformations first in `06-Snowpark-Development.ipynb`, then deploy identical functions as SP_APPLY_EVENTS_SNOWPARK and replace the task entry point. The unpinned Snowpark package resolves at procedure creation. The optional pipeline notebook is a separately gated alternative consumer, not part of this task graph. One synthetic raw replay bypasses stage/Snowpipe intentionally to isolate business idempotency. Expected final raw/inbox=11 (15 with 02A), current=3, rejects=1, pending=0, active value=165. Compare SQL and Snowpark results before calling the deployment successful.
 
 ## Table-first teaching sequence
 

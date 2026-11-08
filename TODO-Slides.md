@@ -10,3 +10,9 @@
 Recommendation: teach this as a short setup workflow slide, not a general cryptography lesson. Add a second slide only if the existing deck needs a simple public-key/private-key diagram to explain why the public key is registered while the private key stays on the student's machine.
 
 The slide deck is not present in this repository, so this is a change log item for the deck update rather than a slide edit.
+
+## Day 1 optional ingestion extensions
+
+- [ ] Contrast Lab 02 REFRESH with 02A Snowpipe REST insertFiles using the same stage and pipe; distinguish file replay from duplicate events in a new file.
+- [ ] Show 8/12, 10/14 and 11/15 delivery checkpoints; Silver inbox preserves deliveries while current orders and Gold business totals remain unchanged.
+- [ ] Show 02B's separate directory stage, stream, task and target.
