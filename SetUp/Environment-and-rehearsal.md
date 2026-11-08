@@ -20,7 +20,7 @@ Windows is the supported student environment for local Python setup during class
 
 Warehouse auto-suspend limits idle warehouse use; it is not a cap on Snowpipe or total account charges. Monitor classroom consumption and pause ingestion/tasks at day end. Do not promise a fixed lab cost before rehearsal.
 
-Lab 01 creates `ADV_ORDERS.BRONZE.ORDER_EVENTS_SOURCE`, a synthetic mock order-event source table with `batch` and `payload` columns. Its payloads are unloaded into staged JSON files for ingestion; it is separate from the Bronze ingestion destination.
+Lab 01 creates `ADV_ORDERS.BRONZE.VW_ORDER_EVENTS_SOURCE`, a view over deterministic synthetic mock order-event values with `batch` and `payload` columns. Its payloads are unloaded into staged JSON files for ingestion; it is separate from the Bronze ingestion destination.
 
 ## First-class preflight (30 minutes)
 

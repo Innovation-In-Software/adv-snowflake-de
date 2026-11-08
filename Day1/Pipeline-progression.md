@@ -7,12 +7,12 @@ These diagrams show intended structure at each lab checkpoint. Read the SQL comm
 ## Lab 01 - Source data and staged files
 
 ```text
-ORDER_EVENTS_SOURCE (batch, payload)
+VW_ORDER_EVENTS_SOURCE view (batch, payload)
   -> SQL unload using EVENTS_JSON
   -> EVENTS_STAGE / batch1 and batch2 files
 ```
 
-Add the repeatable synthetic order-event source table, JSON file format and internal stage. No Bronze destination or processing stream is created here. Staged files contain full order states, including the identical e2 replay and the invalid e3 amount.
+Add a view over repeatable synthetic order-event values, a JSON file format and an internal stage. The view is the simulated source; it does not persist another copy of the mock data. No Bronze destination or processing stream is created here. Staged files contain full order states, including the identical e2 replay and the invalid e3 amount.
 
 ## Lab 02 - File ingestion into Bronze
 
@@ -28,6 +28,32 @@ EVENTS_STAGE / batch2 -- ORDERS_PIPE ------------> EVENTS_RAW
 ```
 
 Add EVENTS_RAW, its append-only stream and ORDERS_PIPE. Create the stream before loading the files. COPY loads batch1; Snowpipe loads batch2. AUTO_INGEST is FALSE; REFRESH is the explicit classroom loading trigger. The stream tracks the source table history rather than storing another copy of its rows. Expected first-pass Bronze count: 8; pending stream rows: 8.
+
+## Optional Lab 02A - Client-driven SQL API load
+
+```text
+VW_ORDER_EVENTS_SOURCE view -> local Python JSON files -> PUT -> API_EVENTS_STAGE
+                                                            |
+Python SQL API request (JWT) ------------------------------+-> COPY INTO
+                                                               API_EVENTS_RAW
+```
+
+The client creates local batch files, uploads them with the Python connector, then uses the Snowflake SQL API to request COPY. The extension uses an isolated stage and target and does not change Lab 03's `EVENTS_RAW` count.
+
+## Optional Lab 02B - Directory-table triggered load
+
+```text
+DIR_EVENTS_STAGE -> directory table -> DIR_EVENTS_STAGE_STREAM
+        ^                                      |
+        | explicit ALTER STAGE REFRESH         | WHEN stream has data
+        +---------------------------------- DIR_EVENTS_LOAD_TASK
+                                                   |
+                                         SP_LOAD_DIRECTORY_STAGE_FILES
+                                                   |
+                                         COPY INTO DIR_EVENTS_RAW
+```
+
+The task starts after refreshed directory metadata changes. The procedure consumes the directory stream into `DIR_FILE_EVENTS`, then COPY scans the isolated stage; Snowflake load history skips files already loaded to the extension target. Suspend the optional task after the demonstration. This extension also leaves core `EVENTS_RAW` unchanged.
 
 ## Lab 03 - Bronze to current Silver state
 

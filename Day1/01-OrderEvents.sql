@@ -68,20 +68,15 @@ ALTER SESSION SET TIMEZONE='UTC';
 -- the active-order total rather than deleted from the order history.
 
 
--- ORDER_EVENTS_SOURCE contains synthetic mock order-event data, not the production ingestion destination.
+-- VW_ORDER_EVENTS_SOURCE is a view over deterministic synthetic mock data, not a stored table
+-- or the production ingestion destination.
 -- batch selects the generated input file; it is outside the JSON payload.
 -- payload stores the parsed JSON object as VARIANT. Only payload is unloaded.
 -- The eight rows below form two four-row deliveries, not eight distinct orders.
 -- Files may contain records in any order; precedence comes from the contract.
 
-CREATE OR REPLACE TABLE ORDER_EVENTS_SOURCE
-(
-    batch NUMBER,
-    payload VARIANT
-);
-
-INSERT INTO ORDER_EVENTS_SOURCE
-SELECT column1, PARSE_JSON(column2)
+CREATE OR REPLACE VIEW VW_ORDER_EVENTS_SOURCE AS
+SELECT column1::NUMBER AS batch, PARSE_JSON(column2) AS payload
 FROM VALUES
 -- Batch 1: initial purchase orders, an exact duplicate, and invalid source data.
 -- e1: o1 is placed for $100 (version 1).
@@ -119,7 +114,7 @@ COPY INTO @EVENTS_STAGE/batch1/events.json.gz
 FROM
 (
     SELECT payload
-    FROM ORDER_EVENTS_SOURCE
+    FROM VW_ORDER_EVENTS_SOURCE
     WHERE batch = 1
 )
 SINGLE = TRUE
@@ -129,7 +124,7 @@ COPY INTO @EVENTS_STAGE/batch2/events.json.gz
 FROM
 (
     SELECT payload
-    FROM ORDER_EVENTS_SOURCE
+    FROM VW_ORDER_EVENTS_SOURCE
     WHERE batch = 2
 )
 SINGLE = TRUE
@@ -139,7 +134,7 @@ OVERWRITE = FALSE;
 LIST @EVENTS_STAGE;
 
 SELECT batch, COUNT(*)
-FROM ORDER_EVENTS_SOURCE
+FROM VW_ORDER_EVENTS_SOURCE
 GROUP BY batch
 ORDER BY batch;
 
@@ -153,7 +148,7 @@ ORDER BY batch;
 
 The intended responsibilities:
 
-ORDER_EVENTS_SOURCE table:  Synthetic mock order-event data used to generate reproducible input batches.
+VW_ORDER_EVENTS_SOURCE view:   Synthetic mock order-event data used to generate reproducible input batches.
 EVENTS_JSON format:         JSON parsing and GZIP compression settings for the staged files.
 EVENTS_STAGE:               Internal stage containing the two generated JSON files.
 

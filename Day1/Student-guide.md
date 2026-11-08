@@ -15,7 +15,11 @@ For each numbered step: instructor explains the purpose, executes it, pauses; ev
 
 ## Run order and pacing
 
-Run SetUp/00, then 01 → 02 → 03 → 04 → 05 → 06. The Snowpark/deployment exercise is part of Day 1. Run 05 before 06 because acceptance expects ten deliveries; 06 adds a distinct eleventh replay delivery. Use Course-runbook.md for the revised proposed day schedule, including Snowpark and deployment time. Teaching durations have not yet been timed with a class.
+Run SetUp/00, then 01 → 02 → 03 → 04 → 05 → 06. Lab 01 exposes deterministic mock events through a view and unloads JSON files to an internal stage. Lab 02 remains the core ingestion sequence: manual `COPY INTO` for batch1 and bounded Snowpipe refresh for batch2.
+
+After Lab 02, two optional, isolated extensions compare other ingestion triggers: [Optional Lab 02A](Optional-02A-Python-SQLAPI.md) demonstrates local JSON creation/upload followed by a Snowflake SQL API COPY request; [Optional Lab 02B](Optional-02B-DirectoryTriggered.md) demonstrates a directory-table stream and triggered task. Their targets are separate from `EVENTS_RAW`, so either extension can be skipped without changing Lab 03's core starting counts. Suspend the triggered task after the 02B demonstration.
+
+Continue with 03 → 04 → 05 → 06. Run 05 before 06 because acceptance expects ten deliveries; 06 adds a distinct eleventh replay delivery. Use Course-runbook.md for the revised proposed day schedule, including Snowpark and deployment time. Teaching durations have not yet been timed with a class.
 
 ## Lab 03 — develop the queries before making them reusable
 
