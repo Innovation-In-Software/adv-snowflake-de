@@ -8,7 +8,6 @@ import gzip
 import uuid
 import json
 import os
-import tempfile
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -133,20 +132,26 @@ def main() -> None:
         if len(rows) != 4:
             raise RuntimeError("Expected four batch-2 events; complete Lab 01 first.")
 
-        with tempfile.TemporaryDirectory(prefix="snowpipe_lab_") as temp_dir:
-            local_file = Path(temp_dir) / FILE_NAME
-            payloads = [json.loads(r[0]) if isinstance(r[0], str) else r[0] for r in rows]
-            content = "".join(json.dumps(p, separators=(",", ":")) + "\n" for p in payloads)
-            local_file.write_bytes(gzip.compress(content.encode("utf-8"), mtime=0))
-            uri = ("file://" + local_file.as_posix()).replace("'", "''")
+        local_file = Path(__file__).resolve().parent / FILE_NAME
+        json_file = local_file.with_suffix("")
+        payloads = [json.loads(r[0]) if isinstance(r[0], str) else r[0] for r in rows]
+        content = "".join(json.dumps(p, separators=(",", ":")) + "\n" for p in payloads)
+        # Keep readable JSON Lines and the matching compressed upload for inspection.
+        # Each rerun regenerates these same two local files from the source view.
+        json_file.write_bytes(content.encode("utf-8"))
+        local_file.write_bytes(gzip.compress(json_file.read_bytes(), mtime=0))
+        print(f"JSON file: {json_file}")
+        print(f"Upload file: {local_file}")
+        uri = ("file://" + local_file.as_posix()).replace("'", "''")
 
-            cursor.execute(f"PUT '{uri}' @ADV_ORDERS.BRONZE.EVENTS_STAGE/batch2/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE")
-            upload = cursor.fetchone()
+        cursor.execute(f"PUT '{uri}' @ADV_ORDERS.BRONZE.EVENTS_STAGE/batch2/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE")
+        upload = cursor.fetchone()
 
-            if upload is None or upload[6] not in ("UPLOADED", "SKIPPED"):
-                raise RuntimeError(f"Upload failed: {upload}")
+        if upload is None or upload[6] not in ("UPLOADED", "SKIPPED"):
+            raise RuntimeError(f"Upload failed: {upload}")
 
-            print(f"Stage upload: {upload[6]} ({SOURCE_FILE})")
+        print(f"Stage upload: {upload[6]} ({SOURCE_FILE})")
+
 
         # Bearer sends the signed token as the request credential over HTTPS.
         # The token authenticates the user; the user's DEFAULT_ROLE authorizes
