@@ -34,6 +34,8 @@ GRANT OWNERSHIP ON DATABASE ADV_ORDERS TO ROLE ADV_LAB COPY CURRENT GRANTS; --Pr
 GRANT USAGE, OPERATE ON WAREHOUSE ADV_WH TO ROLE ADV_LAB;
 GRANT EXECUTE TASK ON ACCOUNT TO ROLE ADV_LAB;
 
+GRANT MODIFY LOG EVENT LEVEL ON ACCOUNT TO ROLE ADV_LAB;
+
 -- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 2: All data work now runs as ADV_LAB, including task ownership.
 -- ──────────────────────────────────────────────────────────────────────────────
