@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import base64
 import hashlib
-import gzip
 import uuid
 import json
 import os
@@ -132,19 +131,16 @@ def main() -> None:
         if len(rows) != 4:
             raise RuntimeError("Expected four batch-2 events; complete Lab 01 first.")
 
-        local_file = Path(__file__).resolve().parent / FILE_NAME
-        json_file = local_file.with_suffix("")
+        local_file = Path(__file__).resolve().parent / "rest_api_replay.json"
         payloads = [json.loads(r[0]) if isinstance(r[0], str) else r[0] for r in rows]
         content = "".join(json.dumps(p, separators=(",", ":")) + "\n" for p in payloads)
-        # Keep readable JSON Lines and the matching compressed upload for inspection.
-        # Each rerun regenerates these same two local files from the source view.
-        json_file.write_bytes(content.encode("utf-8"))
-        local_file.write_bytes(gzip.compress(json_file.read_bytes(), mtime=0))
-        print(f"JSON file: {json_file}")
-        print(f"Upload file: {local_file}")
+        # Keep one readable JSON Lines file for students to inspect.
+        # PUT compresses it during upload as rest_api_replay.json.gz on the stage.
+        local_file.write_bytes(content.encode("utf-8"))
+        print(f"JSON file: {local_file}")
         uri = ("file://" + local_file.as_posix()).replace("'", "''")
 
-        cursor.execute(f"PUT '{uri}' @ADV_ORDERS.BRONZE.EVENTS_STAGE/batch2/ AUTO_COMPRESS=FALSE OVERWRITE=TRUE")
+        cursor.execute(f"PUT '{uri}' @ADV_ORDERS.BRONZE.EVENTS_STAGE/batch2/ AUTO_COMPRESS=TRUE OVERWRITE=TRUE")
         upload = cursor.fetchone()
 
         if upload is None or upload[6] not in ("UPLOADED", "SKIPPED"):

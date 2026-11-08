@@ -13,7 +13,7 @@ python -m pip install -r SetUp/requirements.txt
 python Day1/Optional-02A-PythonSnowpipe.py
 ```
 
-The script writes `Day1/rest_api_replay.json` (one JSON object per line) and its compressed copy `Day1/rest_api_replay.json.gz` beside the Python script. Both remain after execution, and their absolute paths are printed. Open the `.json` file in your editor to inspect the four events. Each rerun regenerates both files; Git ignores these local outputs.
+The script keeps only `Day1/rest_api_replay.json` (one JSON object per line) beside the Python script and prints its full path. Open it in your editor to inspect the four events. Each rerun regenerates this file; Git ignores it. `PUT AUTO_COMPRESS=TRUE` compresses it during upload, producing `rest_api_replay.json.gz` on the stage without keeping a second lab output locally.
 
 The connector reads batch 2 from `VW_ORDER_EVENTS_SOURCE` and uploads `batch2/rest_api_replay.json.gz` to `EVENTS_STAGE`. The REST request is:
 
