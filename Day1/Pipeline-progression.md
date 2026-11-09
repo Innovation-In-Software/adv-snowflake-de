@@ -101,7 +101,7 @@ EXECUTE TASK APPLY_TASK -> check WHEN -> CALL SP_APPLY_EVENTS
 
 Add RUN_AUDIT, the Gold view and a two-task graph. The root stays suspended; the child is resumed. REFRESH and EXECUTE TASK are separate asynchronous requests, for ingestion and processing respectively. PREFIX is relative to the pipe stage path batch2/: it matches update.json.gz. Wait for raw=14; stream=2 before processing. Then inspect the matching graph run until both tasks succeed. Expected result: current orders 3; US active orders 2 / value 165; stream 0. Gold is a view dependency, not another task. A later empty-stream execution tests the condition.
 
-## Lab 05 - Acceptance and rollback evidence
+## Lab 05 - Acceptance evidence
 
 ```text
 BUSINESS PIPELINE (unchanged)
@@ -109,9 +109,6 @@ Bronze -> inbox -> current Silver -> Gold
                          |
                   exact-state / total checks
 
-SEPARATE ROLLBACK DEMONSTRATION
-STREAM_DEMO -> STREAM_DEMO_CHANGES -> STREAM_DEMO_SINK
-                           INSERT inside BEGIN ... ROLLBACK
 ```
 
 Part A states the expected data, shows expected/actual control totals and uses INTERSECT to display all matching rows: 3 current orders, 1 Gold row and 1 rejected event. Row-count controls must also pass, because INTERSECT alone does not expose extra actual rows. Part B is a separate helper demonstration; create its disposable tables and stream immediately before that demonstration, after acceptance. After rollback the demonstration stream still exposes its one inserted row and the sink has zero rows. No new business-processing stage is added. Run before Lab 06: acceptance expects raw/inbox=14.

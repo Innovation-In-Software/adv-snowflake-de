@@ -1,13 +1,12 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright Â© 2026 Innovation In Software Corporation. All rights reserved.
 1) State expected results and display matching pipeline rows with INTERSECT
-2) Demonstrate rollback without stream consumption
-3) Explain replay, cancellation and operational correctness
+2) Explain replay, cancellation and operational correctness
 ----------------------------------------------------------------------------------*/
 
 -- 05 | Day 1 acceptance and handoff
 
--- Diagram: Pipeline-progression.md, Lab 05 - Acceptance and rollback evidence.
+-- Diagram: Pipeline-progression.md, Lab 05 - Acceptance evidence.
 
 USE ROLE ADV_LAB;
 USE WAREHOUSE ADV_WH;
