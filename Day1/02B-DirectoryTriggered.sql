@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS DIR_FILE_EVENTS
     observed_at TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP()
 );
 
--- This is a stream on the the stage's DIRECTORY table 
+-- This is a stream on the stage's DIRECTORY table 
 CREATE STREAM IF NOT EXISTS DIR_EVENTS_STAGE_STREAM
     ON STAGE DIR_EVENTS_STAGE;
 
@@ -70,10 +70,12 @@ BEGIN
 END;
 $$;
 
+-- This runs when Snowflake detects changes in that stream. If another change arrives soon afterward, Snowflake limits how frequently it starts another run—by default, no more often than every 30 seconds.
 CREATE TASK IF NOT EXISTS DIR_EVENTS_LOAD_TASK
     WAREHOUSE = ADV_WH
     WHEN SYSTEM$STREAM_HAS_DATA('DIR_EVENTS_STAGE_STREAM')
     AS CALL SP_LOAD_DIRECTORY_STAGE_FILES();
+
 
 -- Resume only after the stage, stream, table, and procedure exist.
 ALTER TASK DIR_EVENTS_LOAD_TASK RESUME;
@@ -103,7 +105,7 @@ SELECT * FROM DIR_FILE_EVENTS ORDER BY observed_at DESC;
 
 SELECT COUNT(*) AS directory_branch_rows FROM DIR_EVENTS_RAW;
 
-
+-- Check the Task History (in the last hour)
 SELECT
     name,
     state,
@@ -121,3 +123,10 @@ FROM TABLE(
     )
 )
 ORDER BY scheduled_time DESC;
+
+-- Suspend the task to avoid the extra charges:
+ALTER TASK DIR_EVENTS_LOAD_TASK SUSPEND;
+
+-- Checkpoint: first run should yield 2 directory entries, 2 audit rows, and 8 loaded rows. 
+-- Allow time for the task; these queries may initially run before it finishes. 
+-- On reruns, audit rows can increase as files are overwritten, so “2 audit rows” is only a fresh-run expectation.
