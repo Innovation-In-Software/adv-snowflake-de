@@ -92,7 +92,7 @@ ALTER PIPE BRONZE.ORDERS_PIPE REFRESH PREFIX = 'update';
 
 -- As in lab 02, REFRESH is used only as a bounded lab recovery trigger.
 
-SELECT COUNT(*) FROM BRONZE.EVENTS_RAW; -- wait for 10 (14 with Lab 02A) before continuing
+SELECT COUNT(*) FROM BRONZE.EVENTS_RAW; -- wait for 14 before continuing
 
 SELECT COUNT(*) FROM BRONZE.EVENTS_STREAM; -- 2
 
@@ -113,6 +113,18 @@ WHERE DATABASE_NAME = 'ADV_ORDERS'
   AND SCHEMA_NAME = 'OPS'
 ORDER BY SCHEDULED_TIME DESC;
 
+SELECT COUNT(*) AS raw_rows
+FROM BRONZE.EVENTS_RAW; -- 14
+
+SELECT COUNT(*) AS inbox_rows
+FROM SILVER.EVENT_INBOX; -- 14
+
+SELECT COUNT(*) AS current_orders
+FROM SILVER.ORDERS_CURRENT; -- 3
+
+SELECT COUNT(*) AS pending_rows
+FROM BRONZE.EVENTS_STREAM; -- 0 after successful processing
+
 SELECT * FROM RUN_AUDIT ORDER BY recorded_at DESC; -- 3 orders, active value 165
 
 SELECT * FROM GOLD.VW_ORDER_METRICS; -- US: 2, 165
@@ -125,7 +137,8 @@ SELECT * FROM GOLD.VW_ORDER_METRICS; -- US: 2, 165
 EXECUTE TASK APPLY_TASK;
 
 -- ──────────────────────────────────────────────────────────────────────────────
--- CHECKPOINT: business result still 3 orders and active amount 165.
+-- CHECKPOINT: raw/inbox = 14/14; current orders = 3;
+-- active amount = 165; pending stream = 0.
 -- ──────────────────────────────────────────────────────────────────────────────
 -- If any task fails, inspect owner privileges and query ID; do not replace tables
 -- or recreate the stream. Retry only after fixing the cause and checking offsets.

@@ -19,12 +19,13 @@ def required_env(name):
 
 def main():
     # STEP 1: Reuse the local account/user and registered key pair from Lab 02A.
-    repo_root = Path(__file__).resolve().parents[2]
-    load_dotenv(repo_root / ".env", override=False)
+    load_dotenv()
     account = required_env("SNOWFLAKE_ACCOUNT")
     key_path = Path(required_env("SNOWFLAKE_PRIVATE_KEY_FILE")).expanduser()
+    
     if not key_path.is_absolute():
         key_path = (repo_root / key_path).resolve()
+        
     properties = {
         "account": account,
         "url": f"https://{account}.snowflakecomputing.com:443",
@@ -38,6 +39,7 @@ def main():
     # Each invocation deliberately has a new channel/run ID and adds three rows.
     run_id = uuid.uuid4().hex
     print(f"Run ID: {run_id}")
+    
     client = StreamingIngestClient.from_table(
         client_name="advanced-class-streaming-demo",
         db_name="ADV_ORDERS",

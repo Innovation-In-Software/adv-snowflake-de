@@ -76,7 +76,7 @@ EVENTS_RAW -> EVENTS_STREAM -- INSERT --> EVENT_INBOX
 SP_APPLY_EVENTS wraps INSERT + conflict guard + MERGE in one transaction.
 ```
 
-Define both Silver tables first. Develop SELECTs before their views, then demonstrate DML with ROLLBACK before creating the reusable procedure. Identical deliveries remain in the inbox. QUALIFY selects one latest valid state per order; conflicting reuse of an event ID stops processing. e3 remains BAD_AMOUNT; e6 establishes a later valid o3 state. First-pass committed counts: inbox 8 (12 with 02A), current 3, rejects 1, pending 0; active value 150.
+Define both Silver tables first. Develop SELECTs before their views, then demonstrate DML with ROLLBACK before creating the reusable procedure. Identical deliveries remain in the inbox. QUALIFY selects one latest valid state per order; conflicting reuse of an event ID stops processing. e3 remains BAD_AMOUNT; e6 establishes a later valid o3 state. With required Lab 02A, committed counts are inbox 12, current 3, rejects 1, pending 0; active value 150.
 
 ## Lab 04 - Task orchestration and Gold
 
@@ -99,7 +99,7 @@ EXECUTE TASK APPLY_TASK -> check WHEN -> CALL SP_APPLY_EVENTS
                               INSERT into RUN_AUDIT
 ```
 
-Add RUN_AUDIT, the Gold view and a two-task graph. The root stays suspended; the child is resumed. REFRESH and EXECUTE TASK are separate asynchronous requests, for ingestion and processing respectively. PREFIX is relative to the pipe stage path batch2/: it matches update.json.gz. Wait for raw=10 (14 with 02A); stream=2 before processing. Then inspect the matching graph run until both tasks succeed. Expected result: current orders 3; US active orders 2 / value 165; stream 0. Gold is a view dependency, not another task. A later empty-stream execution tests the condition.
+Add RUN_AUDIT, the Gold view and a two-task graph. The root stays suspended; the child is resumed. REFRESH and EXECUTE TASK are separate asynchronous requests, for ingestion and processing respectively. PREFIX is relative to the pipe stage path batch2/: it matches update.json.gz. Wait for raw=14; stream=2 before processing. Then inspect the matching graph run until both tasks succeed. Expected result: current orders 3; US active orders 2 / value 165; stream 0. Gold is a view dependency, not another task. A later empty-stream execution tests the condition.
 
 ## Lab 05 - Acceptance and rollback evidence
 
@@ -114,7 +114,7 @@ STREAM_DEMO -> STREAM_DEMO_CHANGES -> STREAM_DEMO_SINK
                            INSERT inside BEGIN ... ROLLBACK
 ```
 
-Part A states the expected data, shows expected/actual control totals and uses INTERSECT to display all matching rows: 3 current orders, 1 Gold row and 1 rejected event. Row-count controls must also pass, because INTERSECT alone does not expose extra actual rows. Part B is a separate helper demonstration; create its disposable tables and stream immediately before that demonstration, after acceptance. After rollback the demonstration stream still exposes its one inserted row and the sink has zero rows. No new business-processing stage is added. Run before Lab 06: acceptance expects raw/inbox=10 (14 with 02A).
+Part A states the expected data, shows expected/actual control totals and uses INTERSECT to display all matching rows: 3 current orders, 1 Gold row and 1 rejected event. Row-count controls must also pass, because INTERSECT alone does not expose extra actual rows. Part B is a separate helper demonstration; create its disposable tables and stream immediately before that demonstration, after acceptance. After rollback the demonstration stream still exposes its one inserted row and the sink has zero rows. No new business-processing stage is added. Run before Lab 06: acceptance expects raw/inbox=14.
 
 ## Lab 06 - Snowpark development and deployment
 
@@ -141,7 +141,7 @@ REGION_REFERENCE -- join ------+
 APPLY_TASK -> SP_APPLY_EVENTS_SNOWPARK -> AUDIT_TASK -> RUN_AUDIT
 ```
 
-Define reference, transformed-event and candidate tables before filling or processing them. Python executes inside Snowflake. Develop the transformations first in `06-Snowpark-Development.ipynb`, then deploy identical functions as SP_APPLY_EVENTS_SNOWPARK and replace the task entry point. The unpinned Snowpark package resolves at procedure creation. The optional pipeline notebook is a separately gated alternative consumer, not part of this task graph. One synthetic raw replay bypasses stage/Snowpipe intentionally to isolate business idempotency. Expected final raw/inbox=11 (15 with 02A), current=3, rejects=1, pending=0, active value=165. Compare SQL and Snowpark results before calling the deployment successful.
+Define reference, transformed-event and candidate tables before filling or processing them. Python executes inside Snowflake. Develop the transformations first in `06-Snowpark-Development.ipynb`, then deploy identical functions as SP_APPLY_EVENTS_SNOWPARK and replace the task entry point. The unpinned Snowpark package resolves at procedure creation. The optional pipeline notebook is a separately gated alternative consumer, not part of this task graph. One synthetic raw replay bypasses stage/Snowpipe intentionally to isolate business idempotency. Expected final raw/inbox=15, current=3, rejects=1, pending=0, active value=165. Compare SQL and Snowpark results before calling the deployment successful.
 
 ## Table-first teaching sequence
 

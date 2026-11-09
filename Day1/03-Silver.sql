@@ -17,10 +17,9 @@ USE DATABASE ADV_ORDERS;
 USE SCHEMA SILVER;
 
 -- Run one statement or commented group at a time in the SAME worksheet/session.
--- Pause at each result. The first-pass checkpoints assume the eight raw rows
--- from Lab 02, an empty Silver inbox, and an unconsumed Bronze stream.
--- With Lab 02A completed, every delivery-count checkpoint of 8 below is 12.
--- Current orders, rejects, Gold values, and drained-stream checkpoints are unchanged.
+-- Pause at each result. The required sequence includes Lab 02A: start with
+-- twelve raw rows, an empty Silver inbox, and twelve unconsumed stream rows.
+-- Current orders, rejects, Gold values, and drained-stream checkpoints are below.
 -- Tables use IF NOT EXISTS so rerunning setup preserves data and stream progress.
 -- On a later rerun, compare with your starting counts; do not delete accepted data.
 -- Views and the procedure use OR REPLACE to update reusable definitions.
@@ -78,8 +77,9 @@ FROM ORDERS_CURRENT;
 SELECT COUNT(*) AS pending_rows
 FROM BRONZE.EVENTS_STREAM;
 
--- CHECKPOINT on the first pass: raw_rows = 8, inbox_rows = 0,
--- current_orders = 0, pending_rows = 8. The destination is defined, but not populated.
+-- CHECKPOINT: raw_rows = 12, inbox_rows = 0,
+-- current_orders = 0, pending_rows = 12.
+-- The destination is defined, but not populated.
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 2: Try the typed SELECT with real input, then create the view.
@@ -102,7 +102,8 @@ FROM EVENT_INBOX;
 
 -- First inspect the conversion query itself. Safe conversions return NULL
 -- for unsuitable values instead of making the whole query fail.
--- Expect eight deliveries, including two e2 rows. For e3, amount becomes NULL.
+-- Expect twelve deliveries, including repeated e2 rows.
+-- For e3, amount becomes NULL.
 -- That is a conversion result to classify, rather than an empty dataset.
 
 SELECT
@@ -131,7 +132,7 @@ FROM EVENT_INBOX;
 SELECT COUNT(*) AS pending_rows
 FROM BRONZE.EVENTS_STREAM;
 
--- CHECKPOINT on the first pass: inbox_rows = 0, pending_rows = 8.
+-- CHECKPOINT: inbox_rows = 0, pending_rows = 12.
 
 -- The view now stores the SELECT we have just inspected. It stores no rows.
 
@@ -169,7 +170,7 @@ FROM VW_TYPED_EVENTS
 ORDER BY event_id;
 
 -- The CASE expression applies the business contract to the typed values.
--- Expect e3 to have BAD_AMOUNT; the other seven deliveries have no rejection.
+-- Expect e3 to have BAD_AMOUNT; the other eleven deliveries have no rejection.
 -- An identical duplicate is valid input here; latest-state selection comes later.
 
 SELECT
@@ -288,7 +289,7 @@ FROM ORDERS_CURRENT;
 SELECT COUNT(*) AS pending_rows
 FROM BRONZE.EVENTS_STREAM;
 
--- Record these baseline counts: 0 / 0 / 8 on the first pass.
+-- Record these baseline counts: inbox/current/stream = 0 / 0 / 12.
 
 BEGIN TRANSACTION;
 
@@ -374,7 +375,7 @@ SELECT COUNT(*) AS pending_rows
 FROM BRONZE.EVENTS_STREAM;
 
 -- CHECKPOINT: the three counts match the baseline recorded before BEGIN.
--- On the first pass: inbox_rows = 0, current_orders = 0, pending_rows = 8.
+-- Before the trial: inbox_rows = 0, current_orders = 0, pending_rows = 12.
 -- Deleting target rows after COMMIT would not rewind a consumed stream offset.
 -- That is why this processing demonstration uses ROLLBACK rather than cleanup DELETE.
 
@@ -432,15 +433,8 @@ BEGIN
             OR (s.version = t.version AND s.event_time = t.event_time
                 AND s.event_id > t.event_id)
         )
-        THEN UPDATE SET event_id = s.event_id,
-                        version = s.version,
-                        event_time = s.event_time,
-                        status = s.status,
-                        amount = s.amount,
-                        region = s.region
-    WHEN NOT MATCHED THEN
-        INSERT (order_id,   event_id,   version,   event_time,   status,   amount,   region)
-        VALUES (s.order_id, s.event_id, s.version, s.event_time, s.status, s.amount, s.region);
+        THEN UPDATE ALL BY NAME
+    WHEN NOT MATCHED THEN INSERT ALL BY NAME;
 
     COMMIT;
 
@@ -476,7 +470,7 @@ FROM EVENT_INBOX;
 SELECT COUNT(*) AS pending_rows
 FROM BRONZE.EVENTS_STREAM;
 
--- CHECKPOINT on the first pass: e3 / BAD_AMOUNT; inbox_rows = 8; pending_rows = 0.
+-- CHECKPOINT: e3 / BAD_AMOUNT; inbox_rows = 12; pending_rows = 0.
 
 -- Call again with no new deliveries. The accepted state should remain unchanged.
 
@@ -491,4 +485,4 @@ FROM ORDERS_CURRENT;
 SELECT COUNT(*) AS pending_rows
 FROM BRONZE.EVENTS_STREAM;
 
--- CHECKPOINT on the first pass: inbox_rows = 8, current_orders = 3, pending_rows = 0.
+-- CHECKPOINT: inbox_rows = 12, current_orders = 3, pending_rows = 0.
