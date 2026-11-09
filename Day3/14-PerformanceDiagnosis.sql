@@ -66,7 +66,7 @@ SET LOOKUP_QUERY_ID = LAST_QUERY_ID();
 
 INSERT INTO PERF.MEASUREMENTS VALUES ('POINT_BASELINE', $LOOKUP_QUERY_ID, CURRENT_TIMESTAMP());
 
--- CHECKPOINT: ten matching rows. This predicate differs from the date-range query.
+-- CHECKPOINT: 500 matching rows. This predicate differs from the date-range query.
 
 SELECT C.REGION, SUM(O.AMOUNT) AS ACTIVE_AMOUNT
 FROM PERF.ORDERS_BASE O

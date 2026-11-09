@@ -109,13 +109,13 @@ USE WAREHOUSE ADV_WH;
 -- STEP 4 │ Recover a disposable table without touching the business pipeline
 -- ──────────────────────────────────────────────────────────────────────────────
 
-SELECT COUNT(*) FROM PERF.RECOVERY_COPY; -- 1000000
+SELECT COUNT(*) FROM PERF.RECOVERY_COPY; -- 50000000
 
 DROP TABLE PERF.RECOVERY_COPY;
 
 UNDROP TABLE PERF.RECOVERY_COPY;
 
-SELECT COUNT(*) FROM PERF.RECOVERY_COPY; -- 1000000 restored
+SELECT COUNT(*) FROM PERF.RECOVERY_COPY; -- 50000000 restored
 
 -- Clone and Time Travel are local recovery tools. They do not prove another
 -- region/account is ready, nor replace tested replication, RPO/RTO and failover.

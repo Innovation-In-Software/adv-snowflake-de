@@ -7,7 +7,7 @@ These diagrams show intended structure at each lab checkpoint. Read the SQL comm
 ## Lab 13 - Independent performance sandbox
 
 ```text
-SQL GENERATOR -> PERF.ORDERS_BASE (1,000,000)
+SQL GENERATOR -> PERF.ORDERS_BASE (50,000,000)
 SQL GENERATOR -> PERF.CUSTOMERS   (100,000)
 captured query IDs -> PERF.MEASUREMENTS
 
@@ -36,7 +36,7 @@ ORDERS_BASE -- sorted CTAS --> ORDERS_SORTED
               totals / profiles -> MEASUREMENTS
 ```
 
-Create ORDERS_SORTED at the start of this experiment. Compare exact totals, pruning and measured timing; sorted CTAS does not establish the long-term benefit or cost of automatic reclustering. Optional SOS adds a separate ORDERS_SEARCH copy and later removes its search service.
+Create ORDERS_SORTED at the start of this experiment. Compare EXPLAIN partition predictions, exact totals and measured timing; sorted CTAS does not establish the long-term benefit or cost of automatic reclustering. Optional SOS adds a separate ORDERS_SEARCH copy and later removes its search service.
 
 ## Lab 16 - Materialized aggregates and QAS estimate
 

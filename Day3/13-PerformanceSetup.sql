@@ -22,8 +22,8 @@ ALTER SESSION SET QUERY_TAG = 'ADV_2026_DAY3';
 -- ──────────────────────────────────────────────────────────────────────────────
 
 -- Native SQL generator avoids sample-database availability and local Python.
--- One million rows is a rehearsal starting point, not a guaranteed stress test.
--- Increase scale only after the instructor validates class timing and cost.
+-- The 50-million-row fixture demonstrated date pruning in an X-Small rehearsal.
+-- Runtime and partition counts can vary; use each account's measured evidence.
 
 CREATE SCHEMA PERF;
 
@@ -31,7 +31,7 @@ CREATE TABLE PERF.ORDERS_BASE AS
 WITH NUMBERS AS
 (
     SELECT ROW_NUMBER() OVER (ORDER BY SEQ4()) - 1 AS N
-    FROM TABLE(GENERATOR(ROWCOUNT => 1000000))
+    FROM TABLE(GENERATOR(ROWCOUNT => 50000000))
 )
 SELECT N + 1 AS ORDER_ID,
        MOD(N * 7919, 100000) + 1 AS CUSTOMER_ID,
@@ -65,11 +65,11 @@ SELECT COUNT(*) AS ROW_COUNT, COUNT(DISTINCT ORDER_ID) AS UNIQUE_ORDERS,
        MIN(ORDER_ID) AS FIRST_ORDER, MAX(ORDER_ID) AS LAST_ORDER
 FROM PERF.ORDERS_BASE;
 
--- CHECKPOINT: 1000000 rows/unique; IDs 1 through 1000000.
+-- CHECKPOINT: 50000000 rows/unique; IDs 1 through 50000000.
 
 SELECT COUNT(*) AS CUSTOMERS FROM PERF.CUSTOMERS; -- 100000
 
-SELECT COUNT(*) AS CUSTOMER_42_ORDERS FROM PERF.ORDERS_BASE WHERE CUSTOMER_ID = 42; -- 10
+SELECT COUNT(*) AS CUSTOMER_42_ORDERS FROM PERF.ORDERS_BASE WHERE CUSTOMER_ID = 42; -- 500
 
 SELECT COUNT(*) AS CURRENT_ORDERS,
        SUM(IFF(STATUS <> 'CANCELLED', AMOUNT, 0)) AS ACTIVE_AMOUNT_USD
