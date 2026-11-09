@@ -84,6 +84,8 @@ SELECT GOVERNANCE.NEGATIVE_AMOUNT_COUNT(SELECT AMOUNT FROM OPS.DQ_DEMO);
 
 ALTER TABLE OPS.DQ_DEMO SET DATA_METRIC_SCHEDULE = '5 MINUTE';
 
+SET DMF_CHECKPOINT_START = CURRENT_TIMESTAMP();
+
 ALTER TABLE OPS.DQ_DEMO ADD DATA METRIC FUNCTION
     GOVERNANCE.NEGATIVE_AMOUNT_COUNT ON (AMOUNT);
 
@@ -92,12 +94,19 @@ SELECT * FROM TABLE(INFORMATION_SCHEMA.DATA_METRIC_FUNCTION_REFERENCES(
 
 SELECT * FROM SNOWFLAKE.LOCAL.DATA_QUALITY_MONITORING_RESULTS
 WHERE TABLE_DATABASE = 'ADV_ORDERS' AND TABLE_NAME = 'DQ_DEMO'
+  AND METRIC_NAME = 'NEGATIVE_AMOUNT_COUNT'
+  AND MEASUREMENT_TIME >= $DMF_CHECKPOINT_START
 ORDER BY MEASUREMENT_TIME DESC;
 
 -- Scheduled results are asynchronous and may not appear in five exact minutes.
--- Wait for a matching metric/measurement row, not merely successful association DDL.
--- If service/edition/privilege blocks this branch, record BLOCKED and retain
--- direct SQL/metric evidence. Do not claim the scheduled objective passed.
+-- STOP/GO CHECKPOINT: wait for a result row for DQ_DEMO and
+-- NEGATIVE_AMOUNT_COUNT with a current MEASUREMENT_TIME and REF_ID matching
+-- the reference above, not merely successful association DDL.
+-- GO: record MEASUREMENT_TIME and VALUE, then continue below.
+-- If no matching row arrives during class, record this scheduled branch as
+-- BLOCKED (not failed) and continue below. The direct metric calls still pass.
+-- If service/edition/privilege blocks scheduling, record BLOCKED and retain
+-- direct SQL/metric evidence. Do not claim scheduled evidence without a row.
 
 ALTER TABLE OPS.DQ_DEMO DROP DATA METRIC FUNCTION
     GOVERNANCE.NEGATIVE_AMOUNT_COUNT ON (AMOUNT);

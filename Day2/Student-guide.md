@@ -20,9 +20,9 @@ The core policy, masking and scheduled data-quality branches require an appropri
 ## Execute in order
 
 1. `07-Day2-Preflight.sql` — establish state and schemas. Resolve a failed business checkpoint before creating Gold.
-2. `08-DynamicGold.sql` — create the detail and aggregate Dynamic Tables, inspect actual refresh mode/history, and demonstrate a reversible USD 180 → 165 change. Wait for each refresh to succeed.
+2. `08-DynamicGold.sql` — create the detail and aggregate Dynamic Tables, inspect actual refresh mode/history, and demonstrate a reversible USD 180 → 165 change plus the suspend/resume freshness test in Step 3. Wait for each refresh to succeed.
 3. `09-GovernedGold.sql` — create three roles in every environment; apply view policies; test US, EU and auditor. Execute the expected denied Silver read separately, then restore ADV_LAB. Keep secondary roles disabled for these tests.
-4. `10-QualityAndObservability.sql` — immediate checks, custom metric, scheduled monitoring and execution/freshness evidence. Pause after attaching the metric until its result is visible, then detach it. An empty results query is not success.
+4. `10-QualityAndObservability.sql` — immediate checks and custom metric are the required path. After defining the schedule, use the STOP/GO checkpoint: if scheduled evidence appears, record it as a bonus; if it does not arrive during class, record that branch as BLOCKED, not failed, then continue and detach the metric.
 5. `11-GoldConsumers.sql` — consume the US contract; create a Snowflake-hosted Streamlit app using `Streamlit-Gold.py`. The app runs with its owner's US role. It does not automatically adopt each viewer's region. The optional `Governed-Gold.ipynb` provides narrative practice in a Snowflake-hosted notebook.
 6. `99-Day2-Stop.sql` — suspend refreshes and compute after class; retain course data.
 
