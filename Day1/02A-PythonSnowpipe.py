@@ -1,3 +1,5 @@
+# Snowflake Advanced 3-day class Lab: 02A - Snowpipe REST client
+# Copyright © 2026 Innovation In Software Corporation. All rights reserved.
 """Upload duplicate events and submit their file to the existing Snowpipe REST API."""
 
 from __future__ import annotations
@@ -107,6 +109,8 @@ def wait_for_rows(cursor, base_url, headers):
 
 
 def main() -> None:
+    # ──────────────────────────────────────────────────────────────────────
+    # STEP 1: Read local connection settings and the private key.
     load_dotenv()
 
     account = required_env("SNOWFLAKE_ACCOUNT")
@@ -123,6 +127,8 @@ def main() -> None:
                       "schema" :"BRONZE", "login_timeout": 30}
 
     with snowflake.connector.connect(**connect_params) as connection, connection.cursor() as cursor:
+        # ──────────────────────────────────────────────────────────────────────
+        # STEP 2: Read batch 2 and create a local JSON file.
         rows = cursor.execute(
             "SELECT PAYLOAD FROM ADV_ORDERS.BRONZE.VW_ORDER_EVENTS_SOURCE "
             "WHERE BATCH = 2 ORDER BY PAYLOAD:event_id::STRING"
@@ -140,6 +146,8 @@ def main() -> None:
         print(f"JSON file: {local_file}")
         uri = ("file://" + local_file.as_posix()).replace("'", "''")
 
+        # ──────────────────────────────────────────────────────────────────────
+        # STEP 3: Upload the file using connector-side compression.
         cursor.execute(f"PUT '{uri}' @ADV_ORDERS.BRONZE.EVENTS_STAGE/batch2/ AUTO_COMPRESS=TRUE OVERWRITE=TRUE")
         upload = cursor.fetchone()
 
@@ -149,6 +157,8 @@ def main() -> None:
         print(f"Stage upload: {upload[6]} ({SOURCE_FILE})")
 
 
+        # ──────────────────────────────────────────────────────────────────────
+        # STEP 4: Authenticate and submit the filename to Snowpipe.
         # Bearer sends the signed token as the request credential over HTTPS.
         # The token authenticates the user; the user's DEFAULT_ROLE authorizes
         # pipe access. Never print the token: anyone holding it can use it until expiry.
@@ -160,6 +170,8 @@ def main() -> None:
         base_url = f"https://{account}.snowflakecomputing.com/v1/data/pipes/{PIPE}"
         submit_file(base_url, headers)
 
+        # ──────────────────────────────────────────────────────────────────────
+        # STEP 5: Verify asynchronous loading and the Bronze total.
         wait_for_rows(cursor, base_url, headers)
 
         total = cursor.execute("SELECT COUNT(*) FROM ADV_ORDERS.BRONZE.EVENTS_RAW").fetchone()[0]

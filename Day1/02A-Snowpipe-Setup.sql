@@ -1,14 +1,25 @@
+/*----------------Snowflake Advanced 3-day class Lab:-------------------------------
+-- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
+1) Submit a staged file through the Snowpipe REST API
+2) Compare file loading history with file lifecycle events
+3) Verify same-file replay and stop detailed logging
+----------------------------------------------------------------------------------*/
+
 -- Lab 02A: submit a new file to the existing pipe through the Snowpipe REST API.
 -- Run this worksheet in sections; keep it open while running Python locally.
 -- Reuse EVENTS_STAGE, ORDERS_PIPE, and EVENTS_RAW from Lab 02.
+-- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 1: Set the training user's default role for REST API requests.
+-- ──────────────────────────────────────────────────────────────────────────────
 -- The REST API uses the user's DEFAULT_ROLE, not the connector's session role.
 -- Run as the same training user configured in the local .env.
 USE ROLE ACCOUNTADMIN;
 SET student_user = CURRENT_USER();
 ALTER USER IDENTIFIER($student_user) SET DEFAULT_ROLE = ADV_LAB;
 
+-- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 2: Inspect the pipe and enable file-level telemetry.
+-- ──────────────────────────────────────────────────────────────────────────────
 USE ROLE ADV_LAB;
 USE WAREHOUSE ADV_WH;
 USE DATABASE ADV_ORDERS;
@@ -34,12 +45,16 @@ SELECT COUNT(*) AS raw_rows FROM EVENTS_RAW; -- 8 before 02A; 12 after
 SELECT COUNT(*) AS pending_rows FROM EVENTS_STREAM; -- 8 before; 12 after, before Lab 03
 
 
+-- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 3: PAUSE HERE. Run locally from the repository root:
+-- ──────────────────────────────────────────────────────────────────────────────
 -- python Day1/02A-PythonSnowpipe.py
 -- Then rerun the counts above: 12 raw and 12 pending before Lab 03.
 -- Run Python again with the same filename; both counts should stay at 12.
 
+-- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 4: Inspect file loads from the last 24 hours.
+-- ──────────────────────────────────────────────────────────────────────────────
 -- PIPE_NAME is NULL for direct COPY; ORDERS_PIPE identifies Snowpipe loads.
 -- This history does not label REFRESH versus REST submissions.
 -- A repeated, skipped submission does not imply another successful file load.
@@ -60,7 +75,9 @@ FROM TABLE(
 ORDER BY last_load_time DESC;
 
 
+-- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 5: Inspect file lifecycle events, including skipped submissions.
+-- ──────────────────────────────────────────────────────────────────────────────
 -- DEBUG logging must have been enabled before the request; events may take
 -- time to appear. This is file-level telemetry, not one row per HTTP call.
 -- Query the configured event table if your account uses a different one.
@@ -79,6 +96,8 @@ WHERE record_type = 'EVENT'
   AND timestamp >= DATEADD('hour', -1, SYSDATE())
 ORDER BY timestamp DESC;
 
+-- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 6: Run after inspecting BOTH the initial Python run and the rerun.
+-- ──────────────────────────────────────────────────────────────────────────────
 -- Turn detailed logging off; this does not pause the pipe.
 ALTER PIPE ADV_ORDERS.BRONZE.ORDERS_PIPE SET LOG_EVENT_LEVEL = OFF;

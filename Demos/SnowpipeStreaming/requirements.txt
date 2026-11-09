@@ -1,0 +1,2 @@
+snowpipe-streaming
+python-dotenv>=1.0
