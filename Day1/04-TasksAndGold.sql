@@ -41,10 +41,11 @@ GROUP BY region;
 SELECT * FROM GOLD.VW_ORDER_METRICS; -- US: 2, 150.00; no EU active orders
 
 CREATE OR REPLACE TASK APPLY_TASK
-    WAREHOUSE = ADV_WH
+    TARGET_COMPLETION_INTERVAL = '5 MINUTES'  -- serverless task - no warehouse specified
     WHEN SYSTEM$STREAM_HAS_DATA('ADV_ORDERS.BRONZE.EVENTS_STREAM')
 AS
 CALL ADV_ORDERS.SILVER.SP_APPLY_EVENTS();
+-- 5 MINUTES is Snowflake’s target for sizing the serverless compute—not a polling schedule.
 
 CREATE OR REPLACE TASK AUDIT_TASK
     WAREHOUSE = ADV_WH

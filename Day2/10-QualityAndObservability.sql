@@ -44,7 +44,7 @@ SELECT COUNT(*) AS INBOX_ROWS FROM SILVER.EVENT_INBOX;
 
 SELECT COUNT(*) AS PENDING_ROWS FROM BRONZE.EVENTS_STREAM;
 
--- Full Day 1 including Snowpark replay: raw/inbox 11, pending 0.
+-- Full Day 1 including Lab 02A and Snowpark replay: raw/inbox 15, pending 0.
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 2 │ Evaluate a custom data metric before scheduling it

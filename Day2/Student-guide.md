@@ -13,7 +13,7 @@ Auto-suspend can put an idle warehouse to sleep, but enabled task/refresh worklo
 
 ## Before starting
 
-Complete Day 1 through `06-Snowpark-Development.ipynb`. Expected state: 11 raw and inbox rows, three current orders, one BAD_AMOUNT rejection, no pending stream rows, two active US orders totaling USD 165. Suspend the root task between demonstrations. Use the same ADV_ORDERS objects throughout.
+Complete Day 1 through `06-Snowpark-Development.ipynb`. Expected state including Lab 02A: 15 raw and inbox rows, three current orders, one BAD_AMOUNT rejection, no pending stream rows, two active US orders totaling USD 165. Suspend the root task between demonstrations. Use the same ADV_ORDERS objects throughout.
 
 The core policy, masking and scheduled data-quality branches require an appropriate account edition and privileges. All students need the same enabled features; an instructor-only demonstration does not satisfy a hands-on objective. The preflight and final validation report identify any remaining account-specific restrictions.
 

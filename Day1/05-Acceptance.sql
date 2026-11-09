@@ -133,5 +133,30 @@ FROM expected;
 -- 1 matching Gold row; 1 matching rejected-event row. All are required.
 
 
+-- ============================================================================
+-- PART B: ROLLBACK - consuming DML advances a stream only when it commits.
+-- ============================================================================
+-- Disposable objects isolate this demonstration from the order pipeline.
+-- Create all objects BEFORE BEGIN: DDL would commit an active transaction.
+CREATE OR REPLACE TABLE OPS.ROLLBACK_SOURCE (ID NUMBER);
+CREATE OR REPLACE TABLE OPS.ROLLBACK_SINK (ID NUMBER);
+CREATE OR REPLACE STREAM OPS.ROLLBACK_STREAM
+    ON TABLE OPS.ROLLBACK_SOURCE APPEND_ONLY = TRUE;
+
+INSERT INTO OPS.ROLLBACK_SOURCE VALUES (1);
+SELECT COUNT(*) AS PENDING_ROWS FROM OPS.ROLLBACK_STREAM; -- 1
+
+BEGIN TRANSACTION;
+INSERT INTO OPS.ROLLBACK_SINK SELECT ID FROM OPS.ROLLBACK_STREAM;
+SELECT COUNT(*) AS SINK_ROWS_INSIDE_TRANSACTION FROM OPS.ROLLBACK_SINK; -- 1
+ROLLBACK;
+
+SELECT COUNT(*) AS PENDING_ROWS_AFTER_ROLLBACK FROM OPS.ROLLBACK_STREAM; -- 1
+SELECT COUNT(*) AS SINK_ROWS_AFTER_ROLLBACK FROM OPS.ROLLBACK_SINK; -- 0
+-- CHECKPOINT: pending=1, sink=0. The rolled-back INSERT did not consume changes.
+DROP STREAM OPS.ROLLBACK_STREAM;
+DROP TABLE OPS.ROLLBACK_SINK;
+DROP TABLE OPS.ROLLBACK_SOURCE;
+
 -- Written exit check: why does file replay differ from business duplication?
 -- Why retain CANCELLED rows? Why does scheduling success not prove correctness?
