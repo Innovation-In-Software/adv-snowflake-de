@@ -1,6 +1,6 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
-C6 — Dynamic Gold and actual refresh evidence
+-— Dynamic Gold and actual refresh evidence
 1) Create a declarative Gold pipeline from validated Silver
 2) Inspect refresh mode, freshness and history
 3) Reconcile task-maintained state with Dynamic Table results
@@ -24,29 +24,40 @@ ALTER SESSION SET QUERY_TAG = 'ADV_2026_DAY2';
 -- Gold stores enriched detail first; metrics depend on that detail.
 -- Policy controls will be applied at the consumer boundary, not the source.
 
-CREATE TABLE SILVER.ORDER_CONTACTS
+/*
+Our event pipeline contains order information.
+We now introduce a small contact lookup, representing data that could come from a CRM system. 
+We join it to orders in Gold, then use the email field to demonstrate protection of sensitive information in the next lab.
+The table is not required for Dynamic Tables themselves; it makes the join and subsequent governance demonstration concrete.
+*/
+
+CREATE OR REPLACE TABLE SILVER.ORDER_CONTACTS
 (
     ORDER_ID STRING,
     EMAIL    STRING
 );
 
-INSERT INTO SILVER.ORDER_CONTACTS VALUES
-    ('o1', 'owner-o1@example.invalid'),
-    ('o2', 'owner-o2@example.invalid'),
-    ('o3', 'owner-o3@example.invalid');
+INSERT INTO SILVER.ORDER_CONTACTS 
+VALUES  ('o1', 'owner-o1@example.invalid'),
+        ('o2', 'owner-o2@example.invalid'),
+        ('o3', 'owner-o3@example.invalid');
 
-CREATE DYNAMIC TABLE GOLD.ORDER_DETAIL_DT
-    TARGET_LAG  = DOWNSTREAM
+CREATE OR REPLACE DYNAMIC TABLE GOLD.ORDER_DETAIL_DT
+    TARGET_LAG  = DOWNSTREAM                            -- Let the downstream Dynamic Table drive this table's refresh timing.
     WAREHOUSE   = ADV_WH
-    REFRESH_MODE = INCREMENTAL
-    INITIALIZE  = ON_CREATE
+    REFRESH_MODE = INCREMENTAL                          -- Explicit INCREMENTAL requires a supported query; Snowflake does not
+                                                        -- silently choose FULL if the query cannot support incremental refresh.
+                                                        -- Supported options: INCREMENTAL, FULL, AUTO (default)
+    INITIALIZE  = ON_CREATE                             -- Populate the table during CREATE, so we can inspect its data immediately
+                                                        -- after successful creation. If initialization fails, CREATE fails.
+                                                        -- Supported options: ON_CREATE (default), ON_SCHEDULE- postpones initial population until the scheduled refresh.                                                          -- You can also trigger a manual refresh.
 AS
 SELECT O.ORDER_ID, O.EVENT_ID, O.VERSION, O.EVENT_TIME, O.STATUS,
        O.AMOUNT, O.REGION, C.EMAIL
 FROM SILVER.ORDERS_CURRENT O
 LEFT JOIN SILVER.ORDER_CONTACTS C ON O.ORDER_ID = C.ORDER_ID;
 
-CREATE DYNAMIC TABLE GOLD.ORDER_METRICS_DT
+CREATE OR REPLACE DYNAMIC TABLE GOLD.ORDER_METRICS_DT
     TARGET_LAG  = '5 minutes'
     WAREHOUSE   = ADV_WH
     REFRESH_MODE = INCREMENTAL
