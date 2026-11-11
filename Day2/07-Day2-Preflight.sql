@@ -49,15 +49,15 @@ SHOW TASKS IN SCHEMA OPS;
 -- ──────────────────────────────────────────────────────────────────────────────
 
 -- Instructor and students use the same edition/cloud/region. Dynamic Tables,
--- policy features and DMFs have separate capability and privilege requirements.
+-- policy features and Data Metric Functions (DMFs) have separate capability and privilege requirements.
 -- Edition is verified by the administrator in the account configuration.
 -- Enterprise policy/DMF branches must be prevalidated before live class.
 -- Root task remains suspended throughout Day 2; we use deliberate manual runs.
 
 ALTER TASK OPS.APPLY_TASK SUSPEND;
-
 ALTER TASK OPS.AUDIT_TASK SUSPEND;
 
-SELECT 'DAY2_BASELINE' AS CHECKPOINT, COUNT(*) AS CURRENT_ORDERS,
+SELECT 'DAY2_BASELINE'                            AS CHECKPOINT, 
+       COUNT(*)                                   AS CURRENT_ORDERS,
        SUM(IFF(STATUS <> 'CANCELLED', AMOUNT, 0)) AS ACTIVE_AMOUNT_USD
 FROM SILVER.ORDERS_CURRENT;
