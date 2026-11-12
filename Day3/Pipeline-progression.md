@@ -76,7 +76,7 @@ Shutdown -> suspend tasks / pipe / DTs / MV / warehouses
          -> remove optional maintenance if enabled
 ```
 
-No new table. Reconcile actual business state, consumer access and performance evidence. The stop script preserves objects and evidence while stopping services; optional services are stopped only if created. A diagram shows intended structure, not proof that every branch ran successfully.
+No new table. Resume and refresh the Dynamic Tables stopped on Day 2, then verify freshness before reconciling business state, consumer access and performance evidence. The stop script preserves objects and evidence while stopping services; optional services are stopped only if created. A diagram shows intended structure, not proof that every branch ran successfully.
 
 ## Table-first teaching sequence
 

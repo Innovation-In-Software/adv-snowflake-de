@@ -13,12 +13,12 @@ Auto-suspend can put an idle warehouse to sleep, but enabled task/refresh worklo
 
 ## Execute in order
 
-1. `13-PerformanceSetup.sql` — 50 million deterministic orders and 100,000 customers generated with SQL. Verify scale, uniqueness and customer 42's 500 rows. Disable result reuse for baseline experiments.
-2. `14-PerformanceDiagnosis.sql` — capture date-filter, point-lookup and join query IDs; inspect scanning, operator work, spilling and queued time. Write a hypothesis before changing anything.
+1. `13-PerformanceSetup.sql` — 50 million deterministic orders and 100,000 customers generated with SQL. Verify scale, uniqueness and customer 42's 500 rows.
+2. `14-PerformanceDiagnosis.sql` — disable result reuse in this session; capture date-filter, point-lookup and join query IDs; inspect scanning, operator work, spilling and queued time. Write a hypothesis before changing anything.
 3. `15-ClusteringAndSearch.sql` — compare physically date-sorted and baseline tables using identical predicates/results. Inspect pruning; repeat measurements with a stated cache condition. A sorted CTAS is not automatic clustering.
 4. `16-MaterializedViewsAndQAS.sql` — create a maintained aggregate, prove aggregate equality, and inspect whether the optimizer selects it. Evaluate QAS eligibility without enabling service by default.
 5. `17-WarehouseCacheAndRecovery.sql` — compare persisted results and warehouse cache; use a separate tuning warehouse for XS/Small comparison; optional concurrent worksheets; clone/drop/undrop a disposable table.
-6. `18-CapstoneAndAcceptance.sql` — recheck the business and policy contracts, justify a measured optimization, and describe recovery/freshness responsibilities.
+6. `18-CapstoneAndAcceptance.sql` — resume and refresh Gold after Day 2 shutdown, wait for the freshness checkpoint, recheck the business and policy contracts, justify a measured optimization, and describe recovery/freshness responsibilities.
 7. `99-CourseStop.sql` — stop course tasks, pipe, Dynamic Tables, materialized-view maintenance and warehouses. Confirm any optional services are also stopped.
 
 ## Instructor rehearsal evidence

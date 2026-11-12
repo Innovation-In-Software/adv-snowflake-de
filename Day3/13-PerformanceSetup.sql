@@ -11,22 +11,9 @@ C10 setup — deterministic scale without external data
 USE ROLE ADV_LAB;
 USE WAREHOUSE ADV_WH;
 USE DATABASE ADV_ORDERS;
-USE SCHEMA OPS;
-
 ALTER SESSION SET TIMEZONE = 'UTC';
 
 ALTER SESSION SET QUERY_TAG = 'ADV_2026_DAY3';
-
--- Day 2 stop suspends these tables. Restore and verify current Gold state
--- before starting any Day 3 performance measurements.
-ALTER DYNAMIC TABLE GOLD.ORDER_DETAIL_DT RESUME;
-ALTER DYNAMIC TABLE GOLD.ORDER_METRICS_DT RESUME;
-ALTER DYNAMIC TABLE GOLD.ORDER_DETAIL_DT REFRESH;
-ALTER DYNAMIC TABLE GOLD.ORDER_METRICS_DT REFRESH;
-
--- CHECKPOINT: Gold is current before any Day 3 measurement.
-SELECT * FROM GOLD.ORDER_METRICS_DT;
-SHOW DYNAMIC TABLES IN SCHEMA GOLD;
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 1 │ Create a bounded performance sandbox
@@ -69,7 +56,7 @@ CREATE TABLE PERF.MEASUREMENTS
 );
 
 -- ──────────────────────────────────────────────────────────────────────────────
--- STEP 2 │ Verify scale and preserve the tiny business project
+-- STEP 2 │ Verify scale and configuration
 -- ──────────────────────────────────────────────────────────────────────────────
 
 SELECT COUNT(*) AS ROW_COUNT, COUNT(DISTINCT ORDER_ID) AS UNIQUE_ORDERS,
@@ -82,15 +69,5 @@ SELECT COUNT(*) AS CUSTOMERS FROM PERF.CUSTOMERS; -- 100000
 
 SELECT COUNT(*) AS CUSTOMER_42_ORDERS FROM PERF.ORDERS_BASE WHERE CUSTOMER_ID = 42; -- 500
 
-SELECT COUNT(*) AS CURRENT_ORDERS,
-       SUM(IFF(STATUS <> 'CANCELLED', AMOUNT, 0)) AS ACTIVE_AMOUNT_USD
-FROM SILVER.ORDERS_CURRENT;
-
--- CHECKPOINT course business state: 3 orders / 165.
-
 SHOW WAREHOUSES LIKE 'ADV_WH';
 
-ALTER SESSION SET USE_CACHED_RESULT = FALSE;
-
--- A small or cache-resident dataset may show negligible differences. Report
--- measured partition/byte counts and runtime rather than inventing a speedup.

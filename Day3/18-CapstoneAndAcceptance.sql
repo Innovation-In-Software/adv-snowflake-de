@@ -17,6 +17,17 @@ ALTER SESSION SET TIMEZONE = 'UTC';
 
 ALTER SESSION SET QUERY_TAG = 'ADV_2026_DAY3';
 
+-- Day 2 shutdown suspends Gold. Restore it for the capstone.
+SET GOLD_PREFLIGHT_STARTED = CURRENT_TIMESTAMP();
+
+ALTER DYNAMIC TABLE GOLD.ORDER_DETAIL_DT RESUME;
+ALTER DYNAMIC TABLE GOLD.ORDER_METRICS_DT RESUME;
+ALTER DYNAMIC TABLE GOLD.ORDER_DETAIL_DT REFRESH;
+ALTER DYNAMIC TABLE GOLD.ORDER_METRICS_DT REFRESH;
+
+-- Refreshes are asynchronous. Repeat the SHOW and freshness check in Step 1
+-- until both tables pass; do not treat the refresh request alone as evidence.
+
 -- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 1 │ Verify the shared business state
 -- ──────────────────────────────────────────────────────────────────────────────
@@ -29,18 +40,22 @@ SELECT 'REJECT_EVIDENCE', IFF(COUNT(*) = 1, 'PASS', 'FAIL') FROM SILVER.VW_REJEC
 UNION ALL
 SELECT 'STREAM_DRAINED', IFF(COUNT(*) = 0, 'PASS', 'FAIL') FROM BRONZE.EVENTS_STREAM;
 
--- CHECKPOINT: all PASS. Dynamic Gold was restored before Day 2 shutdown.
+-- CHECKPOINT: all PASS.
 
 SHOW DYNAMIC TABLES IN SCHEMA GOLD;
 
 SELECT "name" AS DYNAMIC_TABLE, "scheduling_state" AS SCHEDULING_STATE, "data_timestamp" AS DATA_TIMESTAMP,
-       IFF("scheduling_state" = 'ACTIVE' AND "data_timestamp"::DATE = CURRENT_DATE(), 'PASS', 'FAIL') AS RESULT
+       $GOLD_PREFLIGHT_STARTED AS PREFLIGHT_STARTED,
+       IFF("scheduling_state" = 'ACTIVE' AND "data_timestamp"::DATE = CURRENT_DATE()
+           AND "data_timestamp" >= $GOLD_PREFLIGHT_STARTED, 'PASS', 'FAIL') AS RESULT
 FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))
+WHERE "name" IN ('ORDER_DETAIL_DT', 'ORDER_METRICS_DT')
 ORDER BY "name";
 
--- CHECKPOINT: both ORDER_DETAIL_DT and ORDER_METRICS_DT show ACTIVE and PASS: data_timestamp is today
--- (Day 3, session time zone UTC), i.e. refreshed after the Lab 13 preflight, not left over from Day 2.
--- FAIL means the table is suspended or stale: rerun the Lab 13 preflight (resume both tables and refresh).
+-- CHECKPOINT: both ORDER_DETAIL_DT and ORDER_METRICS_DT appear, show ACTIVE and
+-- PASS, and have a data_timestamp today (UTC) at or after the preflight began.
+-- If either is missing or fails, wait and repeat SHOW and this check. Investigate
+-- a suspended table or a refresh that does not complete before proceeding.
 
 SELECT * FROM GOLD.ORDER_METRICS_DT;
 
