@@ -1,6 +1,6 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
-C9 — Consume governed Gold without widening access
+-— Consume governed Gold without widening access
 1) Query a governed contract as each consumer role
 2) Separate source freshness from authorization context
 3) Prepare a narrowly owned hosted app and a safe share extension
@@ -60,21 +60,5 @@ USE SECONDARY ROLES NONE;
 -- without it. Do not share this training app externally as part of the lab.
 
 -- ──────────────────────────────────────────────────────────────────────────────
--- STEP 3 │ Prepare a policy-independent aggregate for optional account sharing
+-- STEP 3 │ 
 -- ──────────────────────────────────────────────────────────────────────────────
-
-USE ROLE ADV_LAB;
-
-CREATE SECURE VIEW CONSUMER.VW_SHARE_US_METRICS AS
-SELECT REGION, ACTIVE_ORDERS, ACTIVE_AMOUNT_USD FROM GOLD.ORDER_METRICS_DT WHERE REGION = 'US';
-
-SELECT * FROM CONSUMER.VW_SHARE_US_METRICS;
-
--- CHECKPOINT: US / 2 / 165. This intentionally shares ONLY US aggregate values.
--- Current-role policies do not transfer transparently to every external consumer.
--- Optional-DataShare.sql supplies producer/consumer steps with a prevalidated
--- second account. Account identifiers must be provided and separately authorized.
--- Cross-account sharing is not proof of external-engine Iceberg interoperability.
-
-USE ROLE ADV_LAB;
-USE SECONDARY ROLES NONE;

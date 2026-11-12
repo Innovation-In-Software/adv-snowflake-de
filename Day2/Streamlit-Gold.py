@@ -13,7 +13,11 @@ st.title("US order operations")
 st.caption("All app viewers receive this app owner's US-scoped, masked contract.")
 orders = session.sql("""SELECT ORDER_ID, STATUS, AMOUNT, REGION, EMAIL
     FROM ADV_ORDERS.CONSUMER.VW_ORDERS ORDER BY ORDER_ID""").to_pandas()
-active = orders[orders["STATUS"] != "CANCELLED"]
+    
+minimum_amount = st.slider("Minimum order amount (USD)", 0, 200, 0, step=5)
+filtered_orders = orders[orders["AMOUNT"] >= minimum_amount]
+active = filtered_orders[filtered_orders["STATUS"] != "CANCELLED"]
+
 st.metric("Active orders", len(active))
 st.metric("Active order value (USD)", f"{active['AMOUNT'].sum():.2f}")
-st.dataframe(orders, hide_index=True)
+st.dataframe(filtered_orders, hide_index=True)
