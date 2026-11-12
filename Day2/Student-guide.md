@@ -20,17 +20,19 @@ The core policy, masking and scheduled data-quality branches require an appropri
 ## Execute in order
 
 1. `07-Day2-Preflight.sql` — establish state and schemas. Resolve a failed business checkpoint before creating Gold.
-2. `08-DynamicGold.sql` — create the detail and aggregate Dynamic Tables, inspect actual refresh mode/history, and demonstrate a reversible USD 180 → 165 change plus the suspend/resume freshness test in Step 3. Wait for each refresh to succeed.
+2. `08-DynamicGold.sql` — create the detail and aggregate Dynamic Tables, inspect actual refresh mode/history, and demonstrate a reversible USD 180 → 165 change. Wait for each refresh to succeed.
 3. `09-GovernedGold.sql` — create three roles in every environment; apply view policies; test US, EU and auditor. Execute the expected denied Silver read separately, then restore ADV_LAB. Keep secondary roles disabled for these tests.
 4. `10-QualityAndObservability.sql` — immediate checks and custom metric are the required path. After defining the schedule, use the STOP/GO checkpoint: if scheduled evidence appears, record it as a bonus; if it does not arrive during class, record that branch as BLOCKED, not failed, then continue and detach the metric.
-5. `11-GoldConsumers.sql` — consume the US contract; create a Snowflake-hosted Streamlit app using `Streamlit-Gold.py`. The app runs with its owner's US role. It does not automatically adopt each viewer's region. The optional `Governed-Gold.ipynb` provides narrative practice in a Snowflake-hosted notebook.
+5. `11-GoldConsumers.sql` — consume the US contract. The Streamlit and Governed Notebook UI paths are unrehearsed templates / discussion-only until the UI import path is verified; do not treat them as validated hands-on steps.
 6. `99-Day2-Stop.sql` — suspend refreshes and compute after class; retain course data.
+
+For an optional local Streamlit run, install `python -m pip install -r Day2\requirements-local.txt`, then run `python -m streamlit run Day2\Streamlit-Gold.py -- --local` from the repository root. The root `.env` must provide `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER`, and `SNOWFLAKE_PRIVATE_KEY_FILE` (and `SNOWFLAKE_PRIVATE_KEY_FILE_PWD` if the key is encrypted). The user must have `ADV_ANALYST_US`; the app connects with that role, disables secondary roles, and uses `ADV_WH` and `ADV_ORDERS.CONSUMER`. This local path is separate from the unrehearsed hosted UI path.
 
 ## Optional branches
 
-`Optional-DataShare.sql` requires a second authorized account. Run the provider grants, then confirm exactly what the consumer can see. A created share without a consumer test is incomplete.
+Data sharing is discussion-only; a consumer test requires a second authorized account. A created share without a consumer test is incomplete.
 
-`12-OptionalIceberg.sql` and `Optional-Iceberg-DuckDB.md` are a prevalidated interoperability demonstration, maximum 30 minutes. Run only when the documented storage, authentication, permissions and engine versions have been rehearsed. Metadata inspection alone does not establish interoperability. All required preparation must be reproducible by students if used as a hands-on lab.
+Iceberg interoperability is discussion-only, not a prevalidated demonstration. The path requires a prepared external volume, Iceberg table, Horizon catalog endpoint, permissions and credential delegation, plus a pinned DuckDB setup. Metadata inspection alone does not establish interoperability. All required preparation must be reproducible by students before this becomes a hands-on lab.
 
 ## Acceptance
 

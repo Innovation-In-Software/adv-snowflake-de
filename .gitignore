@@ -14,3 +14,6 @@
 # Generated Lab 02A files retained locally for student inspection
 /Day1/rest_api_replay.json
 /Day1/rest_api_replay.json.gz
+
+# Local archive, retained outside the repository
+/Archive/

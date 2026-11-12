@@ -59,22 +59,25 @@ Define DQ_DEMO first. Develop/evaluate the metric before its optional scheduled 
 ```text
 ORDER_DETAIL_DT -> CONSUMER.VW_ORDERS -> US worksheet
                                       US-owned Streamlit / notebook
-ORDER_METRICS_DT -> VW_SHARE_US_METRICS -> optional aggregate sharing
 ```
 
-No new base table. Consumers use the governed boundary. The app is owned by ADV_ANALYST_US and is US-scoped for all viewers; do not imply per-viewer role filtering. A separate view exposes only US aggregate metrics for the optional share branch.
+No new base table. Consumers use the governed boundary. The hosted app is owned by ADV_ANALYST_US and is US-scoped for all viewers; do not imply per-viewer role filtering. The local app connects as ADV_ANALYST_US.
+
+The Streamlit and Governed Notebook UI paths are unrehearsed templates / discussion-only until the UI import path is verified.
 
 ## Lab 12 - Optional Iceberg interoperability
 
 ```text
-PREVALIDATED ONLY
+UNREHEARSED TEMPLATE / DISCUSSION-ONLY
 prepared storage / external volume
   -> prepared Snowflake Iceberg table
   -> metadata / snapshot reference -> DuckDB read
   -> compare row counts and values
 ```
 
-This is an optional extension, not a mandatory completed node. Do not draw it as a working connection until storage, access and the external read are validated for students. Record BLOCKED if unavailable; preserve the core pipeline. No hidden instructor-only setup.
+This is an optional discussion-only extension, not a runnable hands-on node as-is. It requires a prepared external volume, Iceberg table, Horizon catalog endpoint, permissions and credential delegation, plus a pinned DuckDB setup. Do not draw it as a working connection until the same path is validated for students. Record BLOCKED if unavailable; preserve the core pipeline. No hidden instructor-only setup.
+
+Data sharing is discussion-only; a consumer test requires a second authorized account and an end-to-end import/query path.
 
 ## Table-first teaching sequence
 

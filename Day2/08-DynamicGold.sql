@@ -1,6 +1,6 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
-C6 — Dynamic Gold and actual refresh evidence
+-— Dynamic Gold and actual refresh evidence
 1) Create a declarative Gold pipeline from validated Silver
 2) Inspect refresh mode, freshness and history
 3) Reconcile task-maintained state with Dynamic Table results
@@ -24,29 +24,40 @@ ALTER SESSION SET QUERY_TAG = 'ADV_2026_DAY2';
 -- Gold stores enriched detail first; metrics depend on that detail.
 -- Policy controls will be applied at the consumer boundary, not the source.
 
-CREATE TABLE SILVER.ORDER_CONTACTS
+/*
+Our event pipeline contains order information.
+We now introduce a small contact lookup, representing data that could come from a CRM system. 
+We join it to orders in Gold, then use the email field to demonstrate protection of sensitive information in the next lab.
+The table is not required for Dynamic Tables themselves; it makes the join and subsequent governance demonstration concrete.
+*/
+
+CREATE OR REPLACE TABLE SILVER.ORDER_CONTACTS
 (
     ORDER_ID STRING,
     EMAIL    STRING
 );
 
-INSERT INTO SILVER.ORDER_CONTACTS VALUES
-    ('o1', 'owner-o1@example.invalid'),
-    ('o2', 'owner-o2@example.invalid'),
-    ('o3', 'owner-o3@example.invalid');
+INSERT INTO SILVER.ORDER_CONTACTS 
+VALUES  ('o1', 'owner-o1@example.invalid'),
+        ('o2', 'owner-o2@example.invalid'),
+        ('o3', 'owner-o3@example.invalid');
 
-CREATE DYNAMIC TABLE GOLD.ORDER_DETAIL_DT
-    TARGET_LAG  = DOWNSTREAM
+CREATE OR REPLACE DYNAMIC TABLE GOLD.ORDER_DETAIL_DT
+    TARGET_LAG  = DOWNSTREAM                            -- Let the downstream Dynamic Table drive this table's refresh timing.
     WAREHOUSE   = ADV_WH
-    REFRESH_MODE = INCREMENTAL
-    INITIALIZE  = ON_CREATE
+    REFRESH_MODE = INCREMENTAL                          -- Explicit INCREMENTAL requires a supported query; Snowflake does not
+                                                        -- silently choose FULL if the query cannot support incremental refresh.
+                                                        -- Supported options: INCREMENTAL, FULL, AUTO (default)
+    INITIALIZE  = ON_CREATE                             -- Populate the table during CREATE, so we can inspect its data immediately
+                                                        -- after successful creation. If initialization fails, CREATE fails.
+                                                        -- Supported options: ON_CREATE (default), ON_SCHEDULE- postpones initial population until the scheduled refresh.                                                          -- You can also trigger a manual refresh.
 AS
 SELECT O.ORDER_ID, O.EVENT_ID, O.VERSION, O.EVENT_TIME, O.STATUS,
        O.AMOUNT, O.REGION, C.EMAIL
 FROM SILVER.ORDERS_CURRENT O
 LEFT JOIN SILVER.ORDER_CONTACTS C ON O.ORDER_ID = C.ORDER_ID;
 
-CREATE DYNAMIC TABLE GOLD.ORDER_METRICS_DT
+CREATE OR REPLACE DYNAMIC TABLE GOLD.ORDER_METRICS_DT
     TARGET_LAG  = '5 minutes'
     WAREHOUSE   = ADV_WH
     REFRESH_MODE = INCREMENTAL
@@ -112,52 +123,3 @@ SELECT * FROM GOLD.ORDER_METRICS_DT;
 
 -- CHECKPOINT restored: US / 2 / 165. Owner ADV_LAB retains source privileges.
 -- Optional practice: inspect/change target lag, then restore the five-minute goal.
-
--- 4. Suspend refreshes and observe freshness stop, then resume and catch up.
--- Record DATA_TIMESTAMP for both tables before suspending; compare it after the wait.
-SHOW DYNAMIC TABLES LIKE 'ORDER_DETAIL_DT' IN SCHEMA GOLD;
-SHOW DYNAMIC TABLES LIKE 'ORDER_METRICS_DT' IN SCHEMA GOLD;
-
-ALTER DYNAMIC TABLE GOLD.ORDER_DETAIL_DT SUSPEND;
-
-ALTER DYNAMIC TABLE GOLD.ORDER_METRICS_DT SUSPEND;
-
-UPDATE SILVER.ORDERS_CURRENT SET AMOUNT = 140 WHERE ORDER_ID = 'o1';
-
-SELECT SYSTEM$WAIT(30);
-
-SHOW DYNAMIC TABLES LIKE 'ORDER_DETAIL_DT' IN SCHEMA GOLD;
-SHOW DYNAMIC TABLES LIKE 'ORDER_METRICS_DT' IN SCHEMA GOLD;
-
-SELECT * FROM GOLD.ORDER_METRICS_DT;
-
--- CHECKPOINT while suspended: DATA_TIMESTAMP has not advanced; metrics remain US / 2 / 165.
-
-ALTER DYNAMIC TABLE GOLD.ORDER_DETAIL_DT RESUME;
-
-ALTER DYNAMIC TABLE GOLD.ORDER_METRICS_DT RESUME;
-
-SELECT NAME, STATE, STATE_CODE, STATE_MESSAGE, REFRESH_START_TIME, REFRESH_END_TIME
-FROM TABLE(INFORMATION_SCHEMA.DYNAMIC_TABLE_REFRESH_HISTORY(
-    NAME_PREFIX => 'ADV_ORDERS.GOLD', RESULT_LIMIT => 100))
-ORDER BY REFRESH_START_TIME DESC;
-
-SELECT * FROM GOLD.ORDER_METRICS_DT;
-
--- CHECKPOINT after catch-up: US / 2 / 185 within the five-minute target lag.
--- TARGET_LAG is a staleness goal, not a fixed refresh timer; catch-up was ~106s in this run.
--- Requery/history if the refresh is still active.
-
-UPDATE SILVER.ORDERS_CURRENT SET AMOUNT = 120 WHERE ORDER_ID = 'o1';
-
-ALTER DYNAMIC TABLE GOLD.ORDER_DETAIL_DT REFRESH;
-
-ALTER DYNAMIC TABLE GOLD.ORDER_METRICS_DT REFRESH;
-
-SELECT * FROM GOLD.ORDER_METRICS_DT;
-
--- CHECKPOINT restored: US / 2 / 165.
-
-ALTER DYNAMIC TABLE GOLD.ORDER_DETAIL_DT SUSPEND;
-
-ALTER DYNAMIC TABLE GOLD.ORDER_METRICS_DT SUSPEND;

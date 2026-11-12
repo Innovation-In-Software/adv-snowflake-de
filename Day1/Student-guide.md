@@ -39,7 +39,7 @@ Part A first states the expected pipeline data. Compare expected and actual cont
 
 `Snowpark-OrderTransform.py` remains the complete reusable source for reference; the notebook deployment cell embeds identical source. It is not a separate required execution step. The former SQL companion is retained only in Archive/Lab06-before-consolidation. SQL remains sufficient for this business example; this lab teaches Snowpark APIs and development-to-deployment workflow.
 
-Optional: `Snowpark-Pipeline.ipynb` omits development trials and invokes the handler once. `Optional-NotebookPipeline.sql` explains a separately gated notebook-task alternative. Do not enable two consumers of EVENTS_STREAM. Notebook import/runtime and headless execution must be rehearsed in the class account; handler tests do not certify notebook hosting. The optional task has no original audit child.
+Optional: `Snowpark-Pipeline.ipynb` omits development trials and invokes the handler once. Do not enable two consumers of EVENTS_STREAM. Notebook import/runtime and headless execution must be rehearsed in the class account; handler tests do not certify notebook hosting.
 
 ## Project and expected results
 
