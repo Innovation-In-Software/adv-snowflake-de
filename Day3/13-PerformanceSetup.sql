@@ -17,13 +17,24 @@ ALTER SESSION SET TIMEZONE = 'UTC';
 
 ALTER SESSION SET QUERY_TAG = 'ADV_2026_DAY3';
 
+-- Day 2 stop suspends these tables. Restore and verify current Gold state
+-- before starting any Day 3 performance measurements.
+ALTER DYNAMIC TABLE GOLD.ORDER_DETAIL_DT RESUME;
+ALTER DYNAMIC TABLE GOLD.ORDER_METRICS_DT RESUME;
+ALTER DYNAMIC TABLE GOLD.ORDER_DETAIL_DT REFRESH;
+ALTER DYNAMIC TABLE GOLD.ORDER_METRICS_DT REFRESH;
+
+-- CHECKPOINT: Gold is current before any Day 3 measurement.
+SELECT * FROM GOLD.ORDER_METRICS_DT;
+SHOW DYNAMIC TABLES IN SCHEMA GOLD;
+
 -- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 1 │ Create a bounded performance sandbox
 -- ──────────────────────────────────────────────────────────────────────────────
 
 -- Native SQL generator avoids sample-database availability and local Python.
--- The 50-million-row fixture demonstrated date pruning in an X-Small rehearsal.
--- Runtime and partition counts can vary; use each account's measured evidence.
+-- The validated Day 3 scale is 50 million rows. In the 2026-11-09 rehearsal,
+-- the ORDER_DATE comparison pruned to 1 of 16 partitions on X-Small.
 
 CREATE SCHEMA PERF;
 
@@ -65,7 +76,7 @@ SELECT COUNT(*) AS ROW_COUNT, COUNT(DISTINCT ORDER_ID) AS UNIQUE_ORDERS,
        MIN(ORDER_ID) AS FIRST_ORDER, MAX(ORDER_ID) AS LAST_ORDER
 FROM PERF.ORDERS_BASE;
 
--- CHECKPOINT: 50000000 rows/unique; IDs 1 through 50000000.
+-- CHECKPOINT: 50000000 rows / 50000000 unique; IDs 1 through 50000000.
 
 SELECT COUNT(*) AS CUSTOMERS FROM PERF.CUSTOMERS; -- 100000
 

@@ -31,6 +31,17 @@ SELECT 'STREAM_DRAINED', IFF(COUNT(*) = 0, 'PASS', 'FAIL') FROM BRONZE.EVENTS_ST
 
 -- CHECKPOINT: all PASS. Dynamic Gold was restored before Day 2 shutdown.
 
+SHOW DYNAMIC TABLES IN SCHEMA GOLD;
+
+SELECT "name" AS DYNAMIC_TABLE, "scheduling_state" AS SCHEDULING_STATE, "data_timestamp" AS DATA_TIMESTAMP,
+       IFF("scheduling_state" = 'ACTIVE' AND "data_timestamp"::DATE = CURRENT_DATE(), 'PASS', 'FAIL') AS RESULT
+FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))
+ORDER BY "name";
+
+-- CHECKPOINT: both ORDER_DETAIL_DT and ORDER_METRICS_DT show ACTIVE and PASS: data_timestamp is today
+-- (Day 3, session time zone UTC), i.e. refreshed after the Lab 13 preflight, not left over from Day 2.
+-- FAIL means the table is suspended or stale: rerun the Lab 13 preflight (resume both tables and refresh).
+
 SELECT * FROM GOLD.ORDER_METRICS_DT;
 
 SELECT * FROM PERF.MEASUREMENTS ORDER BY RECORDED_AT;

@@ -1,9 +1,9 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
-C11 part 1 — Pruning, physical order and optional search optimization
-1) Compare equivalent results on differently ordered layouts
+C11 part 1 — 50M rows: partition pruning, physical order and search optimization
+1) Compare equivalent results on differently ordered 50M-row layouts
 2) Separate physical pruning from cache and warehouse effects
-3) Evaluate search optimization for a selective lookup
+3) Compare one-time ordering with a maintained clustering policy
 ----------------------------------------------------------------------------------*/
 
 -- Diagram: Pipeline-progression.md, Lab 15 - Physical ordering comparison.
@@ -14,28 +14,36 @@ USE DATABASE ADV_ORDERS;
 USE SCHEMA OPS;
 
 ALTER SESSION SET TIMEZONE = 'UTC';
-
 ALTER SESSION SET QUERY_TAG = 'ADV_2026_DAY3';
 
 -- ──────────────────────────────────────────────────────────────────────────────
--- STEP 1 │ Create a physically ordered comparison table
+-- STEP 1 │ Build equivalent ordered and keyed comparison tables
 -- ──────────────────────────────────────────────────────────────────────────────
 
 CREATE TABLE PERF.ORDERS_SORTED AS
 SELECT * FROM PERF.ORDERS_BASE ORDER BY ORDER_DATE;
 
--- Sorted CTAS isolates physical ordering. It is not proof of the long-term
--- benefit or cost of automatic reclustering under an evolving workload.
+CREATE TABLE PERF.ORDERS_CLUSTERED CLUSTER BY (ORDER_DATE) AS
+SELECT * FROM PERF.ORDERS_BASE;
 
-SELECT SYSTEM$CLUSTERING_INFORMATION('ADV_ORDERS.PERF.ORDERS_BASE', '(ORDER_DATE)');
-
-SELECT SYSTEM$CLUSTERING_INFORMATION('ADV_ORDERS.PERF.ORDERS_SORTED', '(ORDER_DATE)');
+-- CHECKPOINT: both tables contain the same 50000000 rows as ORDERS_BASE.
+SELECT 'BASE' AS TABLE_NAME, COUNT(*) AS ROW_COUNT FROM PERF.ORDERS_BASE
+UNION ALL
+SELECT 'ORDERED', COUNT(*) FROM PERF.ORDERS_SORTED
+UNION ALL
+SELECT 'CLUSTERED', COUNT(*) FROM PERF.ORDERS_CLUSTERED;
 
 -- ──────────────────────────────────────────────────────────────────────────────
--- STEP 2 │ Run the same query and compare result values and scan work
+-- STEP 2 │ Compare cold-cache pruning for the same date-range query
 -- ──────────────────────────────────────────────────────────────────────────────
 
 ALTER SESSION SET USE_CACHED_RESULT = FALSE;
+
+-- Suspend and resume to clear the warehouse cache before this table's query.
+USE ROLE ACCOUNTADMIN;
+ALTER WAREHOUSE ADV_WH SUSPEND;
+ALTER WAREHOUSE ADV_WH RESUME;
+USE ROLE ADV_LAB;
 
 EXPLAIN USING TEXT
 SELECT COUNT(*), SUM(AMOUNT)
@@ -46,47 +54,41 @@ SELECT COUNT(*) AS ORDER_COUNT, SUM(AMOUNT) AS ORDER_AMOUNT
 FROM PERF.ORDERS_SORTED
 WHERE ORDER_DATE BETWEEN '2024-06-01'::DATE AND '2024-06-07'::DATE;
 
-SET SORTED_QUERY_ID = LAST_QUERY_ID();
+-- CHECKPOINT (2026-11-09 rehearsal): 479452 rows, $124655461.53;
+-- EXPLAIN 1/16 partitions assigned; query profile 1 partition scanned.
+SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
 
-INSERT INTO PERF.MEASUREMENTS VALUES ('DATE_SORTED', $SORTED_QUERY_ID, CURRENT_TIMESTAMP());
+-- Clear the warehouse cache again before the keyed-table comparison.
+USE ROLE ACCOUNTADMIN;
+ALTER WAREHOUSE ADV_WH SUSPEND;
+ALTER WAREHOUSE ADV_WH RESUME;
+USE ROLE ADV_LAB;
 
-SELECT ORDER_DATE, COUNT(*) AS ROW_COUNT, SUM(AMOUNT) AS TOTAL FROM PERF.ORDERS_BASE GROUP BY ORDER_DATE
-MINUS
-SELECT ORDER_DATE, COUNT(*), SUM(AMOUNT) FROM PERF.ORDERS_SORTED GROUP BY ORDER_DATE;
+EXPLAIN USING TEXT
+SELECT COUNT(*), SUM(AMOUNT)
+FROM PERF.ORDERS_CLUSTERED
+WHERE ORDER_DATE BETWEEN '2024-06-01'::DATE AND '2024-06-07'::DATE;
 
--- CHECKPOINT: empty difference. Also compare total row counts; the generated
--- sorted table was derived from the exact baseline table.
+SELECT COUNT(*) AS ORDER_COUNT, SUM(AMOUNT) AS ORDER_AMOUNT
+FROM PERF.ORDERS_CLUSTERED
+WHERE ORDER_DATE BETWEEN '2024-06-01'::DATE AND '2024-06-07'::DATE;
 
-SELECT M.CASE_NAME, Q.QUERY_ID,
-       Q.BYTES_SCANNED, Q.EXECUTION_TIME, Q.TOTAL_ELAPSED_TIME
-FROM PERF.MEASUREMENTS M
-JOIN TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(RESULT_LIMIT => 1000)) Q
-    ON M.QUERY_ID = Q.QUERY_ID
-WHERE M.CASE_NAME IN ('DATE_BASELINE', 'DATE_SORTED');
-
--- Partition and spill metrics are in Query Profile / operator statistics,
--- not the Information Schema query-history columns.
-
-SET DATE_BASELINE_ID = (SELECT QUERY_ID FROM PERF.MEASUREMENTS
-    WHERE CASE_NAME = 'DATE_BASELINE' ORDER BY RECORDED_AT DESC LIMIT 1);
-
-SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS($DATE_BASELINE_ID));
-
-SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS($SORTED_QUERY_ID));
-
--- Repeat both queries three times with the same warehouse. Record warm/cold
--- conditions explicitly. Equal elapsed times do not negate measured scan savings.
+-- CHECKPOINT (2026-11-09 rehearsal): 479452 rows, $124655461.53;
+-- EXPLAIN 1/16 partitions assigned; query profile 1 partition scanned.
+SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
 
 -- ──────────────────────────────────────────────────────────────────────────────
--- STEP 3 │ Discuss a clustering key and isolate the optional SOS branch
+-- STEP 3 │ Contrast one-time sorting with a maintained clustering policy
 -- ──────────────────────────────────────────────────────────────────────────────
 
--- Optional maintenance experiment, only after cost/edition rehearsal:
--- ALTER TABLE PERF.ORDERS_SORTED CLUSTER BY (ORDER_DATE);
--- ALTER TABLE PERF.ORDERS_SORTED SUSPEND RECLUSTER;
--- A key persists a maintenance policy; sorted CTAS alone does not.
+-- Both layouts pruned to 1 of 16 partitions in the measured date-range query.
+-- ORDER BY physically sorts once at CTAS time. CLUSTER BY defines a maintained
+-- clustering policy; suspend its serverless reclustering after this comparison.
+USE ROLE ACCOUNTADMIN;
+ALTER TABLE ADV_ORDERS.PERF.ORDERS_CLUSTERED SUSPEND RECLUSTER;
+USE ROLE ADV_LAB;
 
--- Optional-SOS.sql contains the exact selective-lookup experiment.
+-- Optional-SOS.sql contains the selective-lookup experiment.
 -- Do not wait indefinitely for serverless build in core classroom time.
 -- If prevalidated search access paths are unavailable, compare the diagnosis
 -- and documented plan without claiming a measured SOS result.

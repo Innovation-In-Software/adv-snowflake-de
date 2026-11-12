@@ -112,12 +112,10 @@ WHERE TABLE_DATABASE = 'ADV_ORDERS'
   AND TABLE_NAME = 'DQ_DEMO'
 ORDER BY MEASUREMENT_TIME DESC;
 
--- STOP/GO CHECKPOINT: scheduled results are asynchronous and may not appear
--- in five exact minutes. Wait until the instructor's designated stop time.
--- GO: if a matching measurement arrives, record its time and value as bonus evidence.
--- If no result arrives during class, record the scheduled branch as BLOCKED,
--- not failed, and continue. The lab passes when the direct metric returns 1
--- and the schedule and metric association are defined.
+-- Scheduled results are asynchronous and may not appear in five exact minutes.
+-- Wait for a matching metric/measurement row, not merely successful association DDL.
+-- If service/edition/privilege blocks this branch, record BLOCKED and retain
+-- direct SQL/metric evidence. Do not claim the scheduled objective passed.
 
 ALTER TABLE OPS.DQ_DEMO DROP DATA METRIC FUNCTION GOVERNANCE.NEGATIVE_AMOUNT_COUNT ON (AMOUNT);
 
@@ -267,6 +265,8 @@ SELECT SNOWFLAKE.CORE.NEGATIVE_COUNT(SELECT AMOUNT FROM OPS.DQ_BUILTIN_DEMO) AS 
 
 SELECT SNOWFLAKE.CORE.MIN(SELECT AMOUNT FROM OPS.DQ_BUILTIN_DEMO) AS MINIMUM_AMOUNT,
        SNOWFLAKE.CORE.AVG(SELECT AMOUNT FROM OPS.DQ_BUILTIN_DEMO) AS AVERAGE_AMOUNT;
+
+SELECT 
 
 -- CHECKPOINT: -5 (min), 10 (avg)
 -- NULL is excluded from the average.
