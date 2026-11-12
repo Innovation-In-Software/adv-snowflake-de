@@ -1,6 +1,6 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
-C11 part 2 — Repeated aggregates and eligibility-driven acceleration
+-- Part 2 — Repeated aggregates and eligibility-driven acceleration
 1) Build and query a supported aggregate materialized view
 2) Check whether the optimizer rewrites the original query
 3) Evaluate Query Acceleration eligibility before enabling a service

@@ -1,6 +1,6 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
-Final shutdown — stop all explicitly created services
+-- Final shutdown — stop all explicitly created services
 1) Stop all course refresh and task schedules
 2) Remove optional search/QAS maintenance if enabled
 3) Preserve or deliberately retire the training resources after review

@@ -1,6 +1,6 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
-C11 operations — Cache, sizing, concurrency and recovery
+-- operations — Cache, sizing, concurrency and recovery
 1) Distinguish persisted results, warehouse cache and warehouse sizing
 2) Observe independent concurrent sessions without a hidden load generator
 3) Recover a training object and explain the limits of local recovery

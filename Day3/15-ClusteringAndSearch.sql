@@ -1,6 +1,6 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
-C11 part 1 — 50M rows: partition pruning, physical order and search optimization
+-- Part 1 — 50M rows: partition pruning, physical order and search optimization
 1) Compare equivalent results on differently ordered 50M-row layouts
 2) Separate physical pruning from cache and warehouse effects
 3) Compare one-time ordering with a maintained clustering policy

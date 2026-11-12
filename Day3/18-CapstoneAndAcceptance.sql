@@ -1,6 +1,6 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
-Course capstone — defend a complete operational design
+-- Course capstone — defend a complete operational design
 1) Reconcile the shared order project under engineer and consumer roles
 2) Summarize performance evidence without unsupported speedup claims
 3) Explain governance, freshness and recovery tradeoffs

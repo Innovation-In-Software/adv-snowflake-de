@@ -1,6 +1,6 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
-C10 setup — deterministic scale without external data
+-- setup — deterministic scale without external data
 1) Build the same repeatable performance fixture in every environment
 2) Keep performance experiments separate from course business tables
 3) Record exact scale and configuration before measurement

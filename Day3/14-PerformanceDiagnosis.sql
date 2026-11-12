@@ -1,6 +1,6 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
-C10 — Diagnose before choosing an optimization
+-— Diagnose before choosing an optimization
 1) Read EXPLAIN, Query Profile and immediate query history
 2) Capture query IDs and distinguish elapsed time components
 3) Choose a hypothesis based on selectivity and physical work
