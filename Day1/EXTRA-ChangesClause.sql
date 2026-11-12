@@ -31,15 +31,15 @@ CREATE OR REPLACE TABLE OPS.CHANGES_DEMO
 )
 CHANGE_TRACKING = TRUE;
 
-INSERT INTO OPS.CHANGES_DEMO VALUES
+INSERT INTO OPS.CHANGES_DEMO 
+VALUES
     ('o1', 'NEW', 120.00),
     ('o2', 'NEW', 250.00),
     ('o3', 'NEW',  80.00);
 
 -- Create AFTER the initial load but BEFORE the changes.
 -- A new stream does not return existing table rows by default.
-CREATE OR REPLACE STREAM OPS.CHANGES_DEMO_STREAM
-    ON TABLE OPS.CHANGES_DEMO;
+CREATE OR REPLACE STREAM OPS.CHANGES_DEMO_STREAM ON TABLE OPS.CHANGES_DEMO;
 
 -- The sink records change rows, including their action; it is not current state.
 CREATE OR REPLACE TABLE OPS.CHANGES_DEMO_SINK
@@ -65,7 +65,10 @@ INSERT INTO OPS.CHANGES_DEMO VALUES ('o4', 'NEW', 410.00);
 
 SET changes_end = CURRENT_TIMESTAMP();
 
-SELECT * FROM OPS.CHANGES_DEMO ORDER BY order_id;
+SELECT * 
+FROM OPS.CHANGES_DEMO 
+ORDER BY order_id;
+
 -- CHECKPOINT current state: o1/SHIPPED/135, o3/NEW/80, o4/NEW/410.
 
 -- ──────────────────────────────────────────────────────────────────────────────
@@ -76,8 +79,8 @@ SELECT * FROM OPS.CHANGES_DEMO ORDER BY order_id;
 -- Our initial load is outside the interval, so the o1 update appears as a pair.
 -- Fixed timestamps make repeated queries comparable. OFFSET => -300 moves with
 -- the clock and can point before this table or its tracking metadata existed.
-SELECT order_id, status, amount,
-       METADATA$ACTION, METADATA$ISUPDATE, METADATA$ROW_ID
+
+SELECT order_id, status, amount, METADATA$ACTION, METADATA$ISUPDATE, METADATA$ROW_ID
 FROM OPS.CHANGES_DEMO
     CHANGES (INFORMATION => DEFAULT)
     AT (TIMESTAMP => $changes_start)
@@ -113,13 +116,16 @@ SELECT COUNT(*) AS stream_rows_before_consumption
 FROM OPS.CHANGES_DEMO_STREAM; -- 4
 
 BEGIN TRANSACTION;
-INSERT INTO OPS.CHANGES_DEMO_SINK
-    (order_id, status, amount, change_action, is_update)
+
+INSERT INTO OPS.CHANGES_DEMO_SINK (order_id, status, amount, change_action, is_update)
 SELECT order_id, status, amount, METADATA$ACTION, METADATA$ISUPDATE
 FROM OPS.CHANGES_DEMO_STREAM;
+
 COMMIT;
 
-SELECT COUNT(*) AS sink_change_rows FROM OPS.CHANGES_DEMO_SINK; -- 4
+SELECT COUNT(*) AS sink_change_rows 
+FROM OPS.CHANGES_DEMO_SINK; -- 4
+
 SELECT COUNT(*) AS stream_rows_after_consumption
 FROM OPS.CHANGES_DEMO_STREAM; -- 0
 
