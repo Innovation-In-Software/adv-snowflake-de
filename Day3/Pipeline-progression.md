@@ -36,17 +36,17 @@ additional 10M rows -> both tables -> date predicate -> totals / profiles
 
 Create both comparison tables at the start. Compare side-by-side EXPLAIN partition predictions and query profiles before and after the same additional load. Automatic clustering may not run during class; equal plans are a valid result, and a difference alone does not establish its cause. Record actual evidence and suspend the service afterward. The original 50M-row base stays unchanged. Optional SOS adds a separate ORDERS_SEARCH copy and later removes its search service.
 
-## Lab 16 - Materialized aggregates and QAS estimate
+## Lab 16 - Alternative clustering key
 
 ```text
-ORDERS_BASE -> MVW_DAILY_ORDER -> direct aggregate query
-      |               ^
-      +-> base query -+ optimizer may choose rewrite
-captured query ID -> QAS eligibility estimate
-                 -> optional ADV_QAS_WH experiment
+TPC-H SF100 ORDERS -> TPCH_ORDERS_BY_DATE (150M, O_ORDERDATE)
+                              |             -> date / customer queries
+                              +-> MVW_BY_CUSTOMER (O_CUSTKEY)
+                                     -> direct customer query
+                              base query -> optimizer may choose MV
 ```
 
-The materialized view is a maintained output, created from its defining SELECT. Compare direct results and inspect whether a base query is actually rewritten. QAS estimation is not measured acceleration; optional execution uses a separate bounded warehouse.
+Lab 16 copies TPC-H sample orders into an independent table; Lab 15's tables stay unchanged. Compare date and customer scans, then direct MV results with the base query and inspect whether the optimizer chooses a rewrite. A covered projection and `SELECT *` illustrate column coverage; a no-rewrite is valid. The copy and MV add storage and maintenance costs; suspend the MV afterward. QAS estimation and optional execution are in `Optional-QAS.sql`, using a separate bounded warehouse.
 
 ## Lab 17 - Cache, compute and local recovery
 
