@@ -27,7 +27,7 @@ A prior one-million-row rehearsal put both layouts in one micro-partition, so it
 
 ## Optional services
 
-`Optional-SOS.sql`: Enterprise feature; wait for search optimization readiness before timing. Compare customer 42 under the same conditions and remove the service after the exercise.
+`Optional-SOS.sql`: copy SF100 sample orders to an independent table and compare a customer lookup before and after search optimization on a dedicated warehouse. Wait for readiness, inspect actual pruning, and drop the table and warehouse afterward; storage and serverless maintenance incur charges.
 
 `Optional-QAS.sql`: compare SF1 and SF1000 sample queries on a dedicated warehouse; check eligibility before enabling QAS, then inspect actual service usage and cost. The SF1000 scan was eligible in QA, but eligibility and acceleration can vary. Drop the dedicated warehouse afterward.
 

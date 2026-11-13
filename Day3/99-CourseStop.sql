@@ -58,7 +58,8 @@ ALTER DYNAMIC TABLE GOLD.ORDER_DETAIL_DT SUSPEND;
 ALTER MATERIALIZED VIEW PERF.MVW_BY_CUSTOMER SUSPEND;
 
 -- Optional branches only if their objects were created:
--- ALTER TABLE PERF.ORDERS_SEARCH DROP SEARCH OPTIMIZATION;
+-- If the SOS lab was interrupted, run its Step 3 cleanup to drop its
+-- search-optimized table and dedicated warehouse.
 -- If Lab 15 reclustering has not yet been stopped, run as the table owner
 -- (normally ADV_LAB, which creates it in Lab 15):
 -- ALTER TABLE PERF.ORDERS_CLUSTERED SUSPEND RECLUSTER;
