@@ -9,10 +9,25 @@
 -- Diagram: Pipeline-progression.md, Lab 16 - Alternative clustering key.
 -- Materialized views require Snowflake Enterprise Edition. This lab also
 -- requires SELECT access to SNOWFLAKE_SAMPLE_DATA.TPCH_SF100.ORDERS.
--- It creates a separate 150M-row copy; Lab 15's tables remain unchanged.
+-- This independent experiment creates a separate 150M-row copy and warehouse;
+-- Lab 15's tables and the main pipeline warehouse remain unchanged.
+
+-- Create a dedicated warehouse so cache resets do not interrupt pipeline work.
+-- If LAB16_WH already exists, verify it is dedicated to this lab and has
+-- these settings and grants; skip CREATE rather than replacing it.
+USE ROLE ACCOUNTADMIN;
+
+CREATE WAREHOUSE LAB16_WH
+    WAREHOUSE_SIZE = 'XSMALL'
+    ENABLE_QUERY_ACCELERATION = FALSE
+    AUTO_SUSPEND = 60
+    AUTO_RESUME = TRUE
+    INITIALLY_SUSPENDED = TRUE;
+
+GRANT USAGE, OPERATE ON WAREHOUSE LAB16_WH TO ROLE ADV_LAB;
 
 USE ROLE ADV_LAB;
-USE WAREHOUSE ADV_WH;
+USE WAREHOUSE LAB16_WH;
 USE DATABASE ADV_ORDERS;
 USE SCHEMA OPS;
 
@@ -47,21 +62,22 @@ SELECT COUNT(*) AS ROW_COUNT FROM PERF.TPCH_ORDERS_BY_DATE;
 -- CHECKPOINT: 150000000 rows.
 
 -- Disable persisted result reuse above. For cold-cache measurements, the
--- warehouse must fully suspend before it is resumed. ADV_LAB needs OPERATE.
--- Restarting affects other sessions and may incur startup charges; in a
--- shared account use an isolated warehouse, not another user's warehouse.
--- For each restart: if already SUSPENDED, skip SUSPEND; if SUSPENDING, repeat
--- SHOW until SUSPENDED before RESUME. Check each profile's cache percentage;
--- if it is nonzero, restart fully and repeat the measurement.
+-- warehouse must fully suspend before it is resumed. Each restart incurs
+-- startup charges and affects any other session using LAB16_WH.
+-- Run each restart block one statement at a time: if already SUSPENDED, skip
+-- SUSPEND; repeat SHOW until it reports SUSPENDED, then run RESUME. Do not
+-- run the block as a batch. Check each profile's cache percentage; if nonzero,
+-- restart fully and repeat the measurement.
 
 EXPLAIN
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
 FROM PERF.TPCH_ORDERS_BY_DATE
 WHERE O_ORDERDATE BETWEEN DATE'1995-03-01' AND DATE'1995-03-07';
 
-ALTER WAREHOUSE ADV_WH SUSPEND;
-SHOW WAREHOUSES LIKE 'ADV_WH';
-ALTER WAREHOUSE ADV_WH RESUME;
+ALTER WAREHOUSE LAB16_WH SUSPEND;
+SHOW WAREHOUSES LIKE 'LAB16_WH';
+-- STOP: repeat SHOW until SUSPENDED before running RESUME.
+ALTER WAREHOUSE LAB16_WH RESUME;
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
 FROM PERF.TPCH_ORDERS_BY_DATE
@@ -83,9 +99,10 @@ EXPLAIN
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
 FROM PERF.TPCH_ORDERS_BY_DATE WHERE O_CUSTKEY = 7918018;
 
-ALTER WAREHOUSE ADV_WH SUSPEND;
-SHOW WAREHOUSES LIKE 'ADV_WH';
-ALTER WAREHOUSE ADV_WH RESUME;
+ALTER WAREHOUSE LAB16_WH SUSPEND;
+SHOW WAREHOUSES LIKE 'LAB16_WH';
+-- STOP: repeat SHOW until SUSPENDED before running RESUME.
+ALTER WAREHOUSE LAB16_WH RESUME;
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
 FROM PERF.TPCH_ORDERS_BY_DATE WHERE O_CUSTKEY = 7918018;
@@ -128,9 +145,10 @@ FROM PERF.MVW_BY_CUSTOMER WHERE O_CUSTKEY = 7918018;
 -- STEP 4 │ Measure a direct MV read
 -- ──────────────────────────────────────────────────────────────────────────────
 
-ALTER WAREHOUSE ADV_WH SUSPEND;
-SHOW WAREHOUSES LIKE 'ADV_WH';
-ALTER WAREHOUSE ADV_WH RESUME;
+ALTER WAREHOUSE LAB16_WH SUSPEND;
+SHOW WAREHOUSES LIKE 'LAB16_WH';
+-- STOP: repeat SHOW until SUSPENDED before running RESUME.
+ALTER WAREHOUSE LAB16_WH RESUME;
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
 FROM PERF.MVW_BY_CUSTOMER WHERE O_CUSTKEY = 7918018;
@@ -151,9 +169,10 @@ EXPLAIN
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
 FROM PERF.TPCH_ORDERS_BY_DATE WHERE O_CUSTKEY = 7918018;
 
-ALTER WAREHOUSE ADV_WH SUSPEND;
-SHOW WAREHOUSES LIKE 'ADV_WH';
-ALTER WAREHOUSE ADV_WH RESUME;
+ALTER WAREHOUSE LAB16_WH SUSPEND;
+SHOW WAREHOUSES LIKE 'LAB16_WH';
+-- STOP: repeat SHOW until SUSPENDED before running RESUME.
+ALTER WAREHOUSE LAB16_WH RESUME;
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
 FROM PERF.TPCH_ORDERS_BY_DATE WHERE O_CUSTKEY = 7918018;
@@ -186,7 +205,7 @@ FROM $1 WHERE "operation" IN ('TableScan', 'Materialized View Scan');
 -- SELECT * used the base table 135/135. Plan choices and counts may vary.
 
 -- ──────────────────────────────────────────────────────────────────────────────
--- STEP 6 │ Account for cost and stop background maintenance
+-- STEP 6 │ Account for cost and stop background maintenance and compute
 -- ──────────────────────────────────────────────────────────────────────────────
 
 -- SHOW reports extra storage in bytes, not a price. The copy and MV consume
@@ -204,5 +223,13 @@ SHOW MATERIALIZED VIEWS LIKE 'MVW_BY_CUSTOMER' IN SCHEMA PERF;
 -- automatic_clustering can still display ON: MV suspension implicitly stops it.
 -- If cleanup fails, resolve it before leaving; the course stop script also
 -- identifies this MV.
+
+-- Stop the dedicated warehouse even if the lab ends before the MV is created.
+-- Switch away first; only run SUSPEND if SHOW reports LAB16_WH is STARTED.
+USE WAREHOUSE ADV_WH;
+SHOW WAREHOUSES LIKE 'LAB16_WH';
+ALTER WAREHOUSE LAB16_WH SUSPEND;
+SHOW WAREHOUSES LIKE 'LAB16_WH';
+-- CHECKPOINT: repeat SHOW until LAB16_WH is SUSPENDED. Storage remains.
 
 -- Optional-QAS.sql is the separate query acceleration estimate and experiment.
