@@ -11,7 +11,6 @@
 -- requires SELECT access to SNOWFLAKE_SAMPLE_DATA.TPCH_SF100.ORDERS.
 -- This independent experiment creates a separate 150M-row copy and warehouse;
 -- Lab 15's tables and the main pipeline warehouse remain unchanged.
-
 -- Create a dedicated warehouse so cache resets do not interrupt pipeline work.
 -- If LAB16_WH already exists, verify it is dedicated to this lab and has
 -- these settings and grants; skip CREATE rather than replacing it.
@@ -41,13 +40,16 @@ ALTER SESSION SET USE_CACHED_RESULT = FALSE;
 
 -- STOP/GO: confirm the shared sample data is accessible before building.
 -- If it is unavailable, ask the instructor; do not silently substitute data.
-SELECT COUNT(*) AS ROW_COUNT FROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF100.ORDERS;
--- CHECKPOINT: 150000000 rows.
+
+SELECT COUNT(*) AS ROW_COUNT 
+FROM SNOWFLAKE_SAMPLE_DATA.TPCH_SF100.ORDERS;
+-- CHECKPOINT: 150,000,000 rows.
 
 -- The sample database is read-only. Copy all columns into our own schema,
 -- physically order by date, and define the table's date clustering key.
 -- Replacing this table invalidates any existing MV based on its old version;
 -- Step 3 replaces this lab's MV. This copy adds storage and build cost.
+
 CREATE OR REPLACE TABLE PERF.TPCH_ORDERS_BY_DATE
 CLUSTER BY (O_ORDERDATE) AS
 SELECT O_ORDERKEY, O_CUSTKEY, O_ORDERSTATUS, O_TOTALPRICE, O_ORDERDATE,
@@ -58,8 +60,9 @@ ORDER BY O_ORDERDATE;
 -- Stop base maintenance during the experiment; the date key remains defined.
 ALTER TABLE PERF.TPCH_ORDERS_BY_DATE SUSPEND RECLUSTER;
 
-SELECT COUNT(*) AS ROW_COUNT FROM PERF.TPCH_ORDERS_BY_DATE;
--- CHECKPOINT: 150000000 rows.
+SELECT COUNT(*) AS ROW_COUNT        -- CHECKPOINT: 150000000 rows.
+FROM PERF.TPCH_ORDERS_BY_DATE;
+
 
 -- Disable persisted result reuse above. For cold-cache measurements, the
 -- warehouse must fully suspend before it is resumed. Each restart incurs
@@ -72,10 +75,7 @@ SELECT COUNT(*) AS ROW_COUNT FROM PERF.TPCH_ORDERS_BY_DATE;
 -- The task has no schedule and only runs when explicitly executed.
 -- ADV_LAB needs OPERATE on LAB16_WH and EXECUTE MANAGED TASK on the account.
 -- The task incurs serverless charges; recreating it can cancel an active run.
--- If rerunning the setup, first confirm any previous task run has finished.
--- Remove the earlier no-argument version before creating the new signature.
-DROP TASK IF EXISTS OPS.TASK_RESTART_LAB16_WH;
-DROP PROCEDURE IF EXISTS OPS.SP_RESTART_LAB16_WH();
+
 
 CREATE OR REPLACE PROCEDURE OPS.SP_RESTART_LAB16_WH(WAIT_SECONDS INTEGER DEFAULT 10)
 RETURNS STRING
@@ -110,14 +110,26 @@ SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
 FROM PERF.TPCH_ORDERS_BY_DATE
 WHERE O_ORDERDATE BETWEEN DATE'1995-03-01' AND DATE'1995-03-07';
 
+EXPLAIN
+SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
+FROM PERF.TPCH_ORDERS_BY_DATE
+WHERE O_ORDERDATE BETWEEN DATE'1995-03-01' AND DATE'1995-03-07'
+->>
+SELECT "partitionsTotal", "partitionsAssigned"
+FROM $1
+WHERE "operation" = 'GlobalStats';
+
 EXECUTE TASK OPS.TASK_RESTART_LAB16_WH;
 -- STOP: wait for this task run to SUCCEED in Snowsight before continuing.
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
 FROM PERF.TPCH_ORDERS_BY_DATE
 WHERE O_ORDERDATE BETWEEN DATE'1995-03-01' AND DATE'1995-03-07';
+
 SET DATE_QUERY_ID = LAST_QUERY_ID();
-SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS($DATE_QUERY_ID));
+
+SELECT * 
+FROM TABLE(GET_QUERY_OPERATOR_STATS($DATE_QUERY_ID));
 
 -- CHECKPOINT (QA rehearsal, X-Small, cold): 435659 orders, 65801651231.17;
 -- EXPLAIN assigned 1/135; profile scanned 1/135 and 1900624 bytes.
@@ -131,15 +143,29 @@ SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS($DATE_QUERY_ID));
 -- for a customer predicate. Capture the scan target and query ID.
 EXPLAIN
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
-FROM PERF.TPCH_ORDERS_BY_DATE WHERE O_CUSTKEY = 7918018;
+FROM PERF.TPCH_ORDERS_BY_DATE 
+WHERE O_CUSTKEY = 7918018;
+
+EXPLAIN
+SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
+FROM PERF.TPCH_ORDERS_BY_DATE 
+WHERE O_CUSTKEY = 7918018
+->>
+SELECT "partitionsTotal", "partitionsAssigned"
+FROM $1
+WHERE "operation" = 'GlobalStats';
 
 EXECUTE TASK OPS.TASK_RESTART_LAB16_WH;
 -- STOP: wait for this task run to SUCCEED in Snowsight before continuing.
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
-FROM PERF.TPCH_ORDERS_BY_DATE WHERE O_CUSTKEY = 7918018;
+FROM PERF.TPCH_ORDERS_BY_DATE 
+WHERE O_CUSTKEY = 7918018;
+
 SET CUSTOMER_BASE_QUERY_ID = LAST_QUERY_ID();
-SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS($CUSTOMER_BASE_QUERY_ID));
+
+SELECT * 
+FROM TABLE(GET_QUERY_OPERATOR_STATS($CUSTOMER_BASE_QUERY_ID));
 
 -- CHECKPOINT (QA rehearsal, X-Small, cold): 18 orders, 2467651.95;
 -- base TableScan assigned and scanned 135/135, 505564016 bytes.
@@ -156,11 +182,15 @@ SELECT O_ORDERKEY, O_CUSTKEY, O_ORDERSTATUS, O_TOTALPRICE, O_ORDERDATE
 FROM PERF.TPCH_ORDERS_BY_DATE;
 
 SET MV_BUILD_QUERY_ID = LAST_QUERY_ID();
+
 SHOW MATERIALIZED VIEWS LIKE 'MVW_BY_CUSTOMER' IN SCHEMA PERF;
-SELECT COUNT(*) AS ROW_COUNT FROM PERF.MVW_BY_CUSTOMER;
+
+SELECT COUNT(*) AS ROW_COUNT 
+FROM PERF.MVW_BY_CUSTOMER;
+
 SELECT $MV_BUILD_QUERY_ID AS MV_BUILD_QUERY_ID;
 
--- CHECKPOINT (QA rehearsal): 150000000 rows, 1762460160 bytes, invalid=false,
+-- CHECKPOINT (QA rehearsal): 150,000,000 rows; 1,762,460,160 bytes; invalid=false,
 -- clustered by O_CUSTKEY; CREATE client elapsed 35.437 seconds. Check Query
 -- History for build time. Storage, timing and physical layout can vary.
 
@@ -169,9 +199,20 @@ SELECT $MV_BUILD_QUERY_ID AS MV_BUILD_QUERY_ID;
 -- QA run it assigned 1/56 partitions immediately and again 10 seconds later.
 -- STOP/GO: if pruning does not appear during class, record that and continue
 -- without claiming an improvement; if stopping early, run Step 6 cleanup.
+
 EXPLAIN
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
-FROM PERF.MVW_BY_CUSTOMER WHERE O_CUSTKEY = 7918018;
+FROM PERF.MVW_BY_CUSTOMER 
+WHERE O_CUSTKEY = 7918018;
+
+EXPLAIN
+SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
+FROM PERF.MVW_BY_CUSTOMER 
+WHERE O_CUSTKEY = 7918018
+->>
+SELECT "partitionsTotal", "partitionsAssigned"
+FROM $1
+WHERE "operation" = 'GlobalStats';
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 4 │ Measure a direct MV read
@@ -181,9 +222,13 @@ EXECUTE TASK OPS.TASK_RESTART_LAB16_WH;
 -- STOP: wait for this task run to SUCCEED in Snowsight before continuing.
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
-FROM PERF.MVW_BY_CUSTOMER WHERE O_CUSTKEY = 7918018;
+FROM PERF.MVW_BY_CUSTOMER 
+WHERE O_CUSTKEY = 7918018;
+
 SET MV_DIRECT_QUERY_ID = LAST_QUERY_ID();
-SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS($MV_DIRECT_QUERY_ID));
+
+SELECT * 
+FROM TABLE(GET_QUERY_OPERATOR_STATS($MV_DIRECT_QUERY_ID));
 
 -- CHECKPOINT (QA rehearsal, X-Small, cold): 18 orders, 2467651.95;
 -- Materialized View Scan scanned 1/56, 2490448 bytes. Compare Step 2.
@@ -197,15 +242,20 @@ SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS($MV_DIRECT_QUERY_ID));
 -- valid; never infer a rewrite merely because the result is correct.
 EXPLAIN
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
-FROM PERF.TPCH_ORDERS_BY_DATE WHERE O_CUSTKEY = 7918018;
+FROM PERF.TPCH_ORDERS_BY_DATE 
+WHERE O_CUSTKEY = 7918018;
 
 EXECUTE TASK OPS.TASK_RESTART_LAB16_WH;
 -- STOP: wait for this task run to SUCCEED in Snowsight before continuing.
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
-FROM PERF.TPCH_ORDERS_BY_DATE WHERE O_CUSTKEY = 7918018;
+FROM PERF.TPCH_ORDERS_BY_DATE 
+WHERE O_CUSTKEY = 7918018;
+
 SET CUSTOMER_AFTER_QUERY_ID = LAST_QUERY_ID();
-SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS($CUSTOMER_AFTER_QUERY_ID));
+
+SELECT * 
+FROM TABLE(GET_QUERY_OPERATOR_STATS($CUSTOMER_AFTER_QUERY_ID));
 
 -- CHECKPOINT (QA rehearsal, X-Small, cold): 18 orders, 2467651.95; EXPLAIN
 -- chose MVW_BY_CUSTOMER, assigned 1/56; profile scanned 1/56, 2490448 bytes.
@@ -215,11 +265,14 @@ SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS($CUSTOMER_AFTER_QUERY_ID));
 -- omitted from the MV. Inspect the objects in both plans; do not assume the
 -- optimizer must choose an MV merely because the needed columns are present.
 EXPLAIN
-SELECT O_ORDERKEY, O_CUSTKEY, O_ORDERDATE, O_TOTALPRICE
-FROM PERF.TPCH_ORDERS_BY_DATE WHERE O_CUSTKEY = 7918018
+SELECT O_ORDERKEY, O_CUSTKEY, O_ORDERDATE, O_TOTALPRICE -- all these columns are projected in the MVW_BY_CUSTOMER
+FROM PERF.TPCH_ORDERS_BY_DATE 
+WHERE O_CUSTKEY = 7918018
 ->>
 EXPLAIN
-SELECT * FROM PERF.TPCH_ORDERS_BY_DATE WHERE O_CUSTKEY = 7918018
+SELECT * -- not all columns are available in MVW_BY_CUSTOMER 
+FROM PERF.TPCH_ORDERS_BY_DATE 
+WHERE O_CUSTKEY = 7918018
 ->>
 SELECT 'COVERED PROJECTION' AS CASE_NAME, "operation", "objects",
        "partitionsAssigned", "partitionsTotal"
@@ -261,6 +314,7 @@ DROP PROCEDURE IF EXISTS OPS.SP_RESTART_LAB16_WH(INTEGER);
 -- ACCOUNTADMIN created it, so switch back to that role to drop it.
 USE WAREHOUSE ADV_WH;
 USE ROLE ACCOUNTADMIN;
+
 DROP WAREHOUSE IF EXISTS LAB16_WH;
 SHOW WAREHOUSES LIKE 'LAB16_WH';
 -- CHECKPOINT: LAB16_WH is absent. The table and suspended MV still use storage.
