@@ -97,21 +97,11 @@ SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
 -- Insert the same deterministic 10 million rows into each table. Dates span
 -- the original range rather than arriving in ORDER_DATE order. ORDERS_BASE
 -- remains at 50 million rows for the other performance labs.
+-- INSERT ALL sends every generated row to both targets in one statement.
 
-INSERT INTO PERF.ORDERS_SORTED
-WITH NUMBERS AS
-(
-    SELECT ROW_NUMBER() OVER (ORDER BY SEQ4()) - 1 + 50000000 AS N
-    FROM TABLE(GENERATOR(ROWCOUNT => 10000000))
-)
-SELECT N + 1 AS ORDER_ID,
-       MOD(N * 7919, 100000) + 1 AS CUSTOMER_ID,
-       DATEADD('day', MOD(N * 37, 730), '2024-01-01'::DATE) AS ORDER_DATE,
-       IFF(MOD(N, 7) = 0, 'CANCELLED', 'PAID') AS STATUS,
-       ((MOD(N * 97, 50000) + 1000) / 100)::NUMBER(12, 2) AS AMOUNT
-FROM NUMBERS;
-
-INSERT INTO PERF.ORDERS_CLUSTERED
+INSERT ALL
+    INTO PERF.ORDERS_SORTED
+    INTO PERF.ORDERS_CLUSTERED
 WITH NUMBERS AS
 (
     SELECT ROW_NUMBER() OVER (ORDER BY SEQ4()) - 1 + 50000000 AS N
