@@ -62,8 +62,8 @@ ALTER MATERIALIZED VIEW PERF.MVW_BY_CUSTOMER SUSPEND;
 -- If Lab 15 reclustering has not yet been stopped, run as the table owner
 -- (normally ADV_LAB, which creates it in Lab 15):
 -- ALTER TABLE PERF.ORDERS_CLUSTERED SUSPEND RECLUSTER;
--- ALTER WAREHOUSE ADV_QAS_WH SET ENABLE_QUERY_ACCELERATION = FALSE;
--- ALTER WAREHOUSE ADV_QAS_WH SUSPEND;
+-- If the QAS lab was interrupted, run its Step 4 cleanup to disable QAS and
+-- drop ADV_QAS_WH as ACCOUNTADMIN.
 -- ALTER WAREHOUSE ADV_TUNE_WH SUSPEND;
 -- DMF lab 10 detaches its metric; verify no association remains on OPS.DQ_DEMO.
 

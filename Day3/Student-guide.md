@@ -29,7 +29,7 @@ A prior one-million-row rehearsal put both layouts in one micro-partition, so it
 
 `Optional-SOS.sql`: Enterprise feature; wait for search optimization readiness before timing. Compare customer 42 under the same conditions and remove the service after the exercise.
 
-`Optional-QAS.sql`: execute only for an eligible query and a validated account. Use its estimate to decide whether the 50-million-row workload qualifies; an ineligible estimate is a valid conclusion, and do not enable QAS to manufacture an improvement.
+`Optional-QAS.sql`: compare SF1 and SF1000 sample queries on a dedicated warehouse; check eligibility before enabling QAS, then inspect actual service usage and cost. The SF1000 scan was eligible in QA, but eligibility and acceleration can vary. Drop the dedicated warehouse afterward.
 
 ## Measurement worksheet
 
