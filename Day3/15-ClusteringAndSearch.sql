@@ -45,6 +45,32 @@ SELECT 'CLUSTERED', COUNT(*) FROM PERF.ORDERS_CLUSTERED;
 
 ALTER SESSION SET USE_CACHED_RESULT = FALSE;
 
+-- Compare plans side by side before running the queries. The pipe operator
+-- passes each EXPLAIN result to the final SELECT: $1 is the preceding result
+-- (clustered) and $2 is the one before it (sorted). Verify both expected
+-- objects appear as TableScan rows.
+-- Partitions assigned are plan estimates, not actual partitions scanned.
+EXPLAIN
+SELECT COUNT(*), SUM(AMOUNT)
+FROM PERF.ORDERS_SORTED
+WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07'
+->>
+EXPLAIN
+SELECT COUNT(*), SUM(AMOUNT)
+FROM PERF.ORDERS_CLUSTERED
+WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07'
+->>
+SELECT "operation", "objects", "partitionsAssigned", "partitionsTotal"
+FROM $2
+WHERE "operation" = 'TableScan'
+UNION ALL
+SELECT "operation", "objects", "partitionsAssigned", "partitionsTotal"
+FROM $1
+WHERE "operation" = 'TableScan';
+
+-- CHECKPOINT (2026-11-09 rehearsal): both plans assigned 1 of 16 partitions.
+-- Actual partition counts can differ; record the results for comparison.
+
 -- A temporary procedure belongs to this worksheet session; recreate it if you
 -- open a new session. It runs with the caller's privileges: environment setup
 -- grants ADV_LAB OPERATE on ADV_WH, so no role switch is needed.
@@ -69,41 +95,31 @@ $$;
 -- Restart before each comparison; resolve any error before measuring.
 CALL OPS.SP_RESTART_ADV_WH();
 
-EXPLAIN USING TEXT
-SELECT COUNT(*), SUM(AMOUNT)
-FROM PERF.ORDERS_SORTED
-WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
-
 SELECT COUNT(*) AS ORDER_COUNT, SUM(AMOUNT) AS ORDER_AMOUNT
 FROM PERF.ORDERS_SORTED
 WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
 
 -- CHECKPOINT (2026-11-09 rehearsal): 479,452 rows, $124,655,461.53;
--- EXPLAIN 1/16 partitions assigned; query profile 1 partition scanned.
+-- query profile 1 partition scanned.
 SELECT * 
 FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
 
 -- Clear the warehouse cache again before the keyed-table comparison.
 CALL OPS.SP_RESTART_ADV_WH();
 
-EXPLAIN USING TEXT
-SELECT COUNT(*), SUM(AMOUNT)
-FROM PERF.ORDERS_CLUSTERED
-WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
-
 SELECT COUNT(*) AS ORDER_COUNT, SUM(AMOUNT) AS ORDER_AMOUNT
 FROM PERF.ORDERS_CLUSTERED
 WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
 
 -- CHECKPOINT (2026-11-09 rehearsal): 479,452 rows, $124,655,461.53;
--- EXPLAIN 1/16 partitions assigned; query profile 1 partition scanned.
+-- query profile 1 partition scanned.
 SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
 
 -- ──────────────────────────────────────────────────────────────────────────────
--- STEP 3 │ Load more data and compare the layouts over time
+-- STEP 3 │ Load more data and compare the layouts again
 -- ──────────────────────────────────────────────────────────────────────────────
 
--- Both layouts pruned to 1 of 16 partitions in the measured date-range query.
+-- Both layouts pruned to 1 of 16 partitions in the instructor's earlier run.
 -- ORDER BY physically sorts once at CTAS time. CLUSTER BY defines a maintained
 -- clustering policy. Automatic clustering remains enabled during the load
 -- and measurements; it is asynchronous and incurs serverless charges.
@@ -136,20 +152,39 @@ SELECT 'CLUSTERED', COUNT(*) FROM PERF.ORDERS_CLUSTERED;
 -- CHECKPOINT: 60000000 rows in each table. If a load fails, do not repeat it
 -- blindly: rebuild both comparison tables from Step 1 before retrying Step 3.
 
--- STEP 3a │ Measure both layouts after the load.
--- Record each EXPLAIN's partitions assigned/total and each query's ID and
--- profile partitions scanned. Compare with Step 2; do not assume degradation.
--- Automatic clustering may already have run on the clustered table; this is
--- not a controlled measurement of its state before maintenance.
+-- STEP 3a │ Compare the plans after the load.
+-- Record assigned/total partitions for each table and compare with Step 2.
+-- Automatic clustering is asynchronous and may already have run, or may not
+-- run during class. Equal plans are a valid result; a difference alone does
+-- not prove that automatic clustering caused it. Do not assume degradation.
+
+EXPLAIN
+SELECT COUNT(*), SUM(AMOUNT)
+FROM PERF.ORDERS_SORTED
+WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07'
+->>
+EXPLAIN
+SELECT COUNT(*), SUM(AMOUNT)
+FROM PERF.ORDERS_CLUSTERED
+WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07'
+->>
+SELECT "operation", "objects", "partitionsAssigned", "partitionsTotal"
+FROM $2
+WHERE "operation" = 'TableScan'
+UNION ALL
+SELECT "operation", "objects", "partitionsAssigned", "partitionsTotal"
+FROM $1
+WHERE "operation" = 'TableScan';
+
+-- CHECKPOINT: both expected tables appear. Partition counts are observations,
+-- not fixed acceptance values.
+
+-- STEP 3b │ Measure both queries after the load.
+-- Record query IDs and profile partitions scanned; compare with Step 2.
 -- Warehouse suspension affects all sessions using ADV_WH. In a shared account,
 -- use an isolated warehouse instead; do not interrupt another user's work.
 
 CALL OPS.SP_RESTART_ADV_WH();
-
-EXPLAIN USING TEXT
-SELECT COUNT(*), SUM(AMOUNT)
-FROM PERF.ORDERS_SORTED
-WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(AMOUNT) AS ORDER_AMOUNT
 FROM PERF.ORDERS_SORTED
@@ -158,11 +193,6 @@ WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
 SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
 
 CALL OPS.SP_RESTART_ADV_WH();
-
-EXPLAIN USING TEXT
-SELECT COUNT(*), SUM(AMOUNT)
-FROM PERF.ORDERS_CLUSTERED
-WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(AMOUNT) AS ORDER_AMOUNT
 FROM PERF.ORDERS_CLUSTERED
@@ -174,58 +204,14 @@ SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
 -- deterministic totals are calculated from the fixture, not a live rehearsal.
 -- Partition counts are observations, not fixed acceptance values.
 
--- STEP 3b │ Observe automatic clustering, then compare again.
--- This service uses serverless compute and incurs charges. Its work is
--- asynchronous and Snowflake decides when reclustering is beneficial.
--- Wait at most five minutes, periodically rerunning the clustered EXPLAIN below.
--- Record whether pruning changes; no observed change within the wait is
--- inconclusive, not a failure. Never wait for a particular partition count.
-
-EXPLAIN USING TEXT
-SELECT COUNT(*), SUM(AMOUNT)
-FROM PERF.ORDERS_CLUSTERED
-WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
-
--- STOP/GO: after observing a change or reaching the five-minute limit,
--- continue to the final comparison. If a measurement fails or class stops
--- early, skip to the cleanup at the end of Step 3.
-
--- STEP 3c │ Compare the layouts again with Step 3a.
--- Use the same cold-cache procedure as above and record EXPLAIN, query IDs and
--- profile partitions scanned for both tables. Results must remain equal.
+-- Compare plans and profiles with Step 2 and report the observed result.
 -- A CTAS rebuild can restore ordering to the sorted table, but it does not
 -- maintain that order automatically after later loads.
 
-CALL OPS.SP_RESTART_ADV_WH();
-
-EXPLAIN USING TEXT
-SELECT COUNT(*), SUM(AMOUNT) FROM PERF.ORDERS_SORTED
-WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
-
-SELECT COUNT(*) AS ORDER_COUNT, SUM(AMOUNT) FROM PERF.ORDERS_SORTED
-WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
-
-SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
-
-CALL OPS.SP_RESTART_ADV_WH();
-
-EXPLAIN USING TEXT
-SELECT COUNT(*), SUM(AMOUNT) FROM PERF.ORDERS_CLUSTERED
-WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
-
-SELECT COUNT(*) AS ORDER_COUNT, SUM(AMOUNT) FROM PERF.ORDERS_CLUSTERED
-WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
-
-SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
-
--- CHECKPOINT: both queries still return 575342 rows and 149590962.53 USD.
--- Compare actual partition counts with Step 3a and report the observed result.
-
--- STOP: suspend automatic reclustering even if no improvement was observed.
+-- STOP: even if a measurement fails or class stops early, suspend automatic
+-- reclustering. The ADV_LAB role owns the table it created in Step 1.
 -- Suspending prevents future automatic reclustering; record any in-flight work.
-USE ROLE ACCOUNTADMIN;
 ALTER TABLE ADV_ORDERS.PERF.ORDERS_CLUSTERED SUSPEND RECLUSTER;
-USE ROLE ADV_LAB;
 
 SHOW TABLES LIKE 'ORDERS_CLUSTERED' IN SCHEMA PERF;
 -- CHECKPOINT: automatic_clustering is OFF. If cleanup fails, resolve it before

@@ -34,7 +34,7 @@ ORDERS_BASE -- sorted CTAS --> ORDERS_SORTED
 additional 10M rows -> both tables -> date predicate -> totals / profiles
 ```
 
-Create both comparison tables at the start. Compare EXPLAIN partition predictions and profiles before and after the same additional load, then observe the clustered table after a bounded automatic-clustering wait. The service may not run during class; record actual evidence and suspend it afterward. The original 50M-row base stays unchanged. Optional SOS adds a separate ORDERS_SEARCH copy and later removes its search service.
+Create both comparison tables at the start. Compare side-by-side EXPLAIN partition predictions and query profiles before and after the same additional load. Automatic clustering may not run during class; equal plans are a valid result, and a difference alone does not establish its cause. Record actual evidence and suspend the service afterward. The original 50M-row base stays unchanged. Optional SOS adds a separate ORDERS_SEARCH copy and later removes its search service.
 
 ## Lab 16 - Materialized aggregates and QAS estimate
 

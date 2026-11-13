@@ -59,7 +59,8 @@ ALTER MATERIALIZED VIEW PERF.MVW_DAILY_ORDER SUSPEND;
 
 -- Optional branches only if their objects were created:
 -- ALTER TABLE PERF.ORDERS_SEARCH DROP SEARCH OPTIMIZATION;
--- If Lab 15 reclustering has not yet been stopped, run as ACCOUNTADMIN:
+-- If Lab 15 reclustering has not yet been stopped, run as the table owner
+-- (normally ADV_LAB, which creates it in Lab 15):
 -- ALTER TABLE PERF.ORDERS_CLUSTERED SUSPEND RECLUSTER;
 -- ALTER WAREHOUSE ADV_QAS_WH SET ENABLE_QUERY_ACCELERATION = FALSE;
 -- ALTER WAREHOUSE ADV_QAS_WH SUSPEND;
