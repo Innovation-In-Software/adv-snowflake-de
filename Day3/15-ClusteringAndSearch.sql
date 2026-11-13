@@ -85,17 +85,13 @@ WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
 SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
 
 -- ──────────────────────────────────────────────────────────────────────────────
--- STEP 3 │ Contrast one-time sorting with a maintained clustering policy
+-- STEP 3 │ Load more data and compare the layouts over time
 -- ──────────────────────────────────────────────────────────────────────────────
 
 -- Both layouts pruned to 1 of 16 partitions in the measured date-range query.
 -- ORDER BY physically sorts once at CTAS time. CLUSTER BY defines a maintained
 -- clustering policy. Automatic clustering remains enabled during the load
 -- and measurements; it is asynchronous and incurs serverless charges.
-
--- ──────────────────────────────────────────────────────────────────────────────
--- STEP 4 │ Load more data and compare the layouts over time
--- ──────────────────────────────────────────────────────────────────────────────
 
 -- Run this step once after Step 1; rerun Step 1 to reset before repeating it.
 -- Insert the same deterministic 10 million rows into each table. Dates span
@@ -133,9 +129,9 @@ UNION ALL
 SELECT 'CLUSTERED', COUNT(*) FROM PERF.ORDERS_CLUSTERED;
 
 -- CHECKPOINT: 60000000 rows in each table. If a load fails, do not repeat it
--- blindly: rebuild both comparison tables from Step 1 before retrying Step 4.
+-- blindly: rebuild both comparison tables from Step 1 before retrying Step 3.
 
--- STEP 4a │ Measure both layouts after the load.
+-- STEP 3a │ Measure both layouts after the load.
 -- Record each EXPLAIN's partitions assigned/total and each query's ID and
 -- profile partitions scanned. Compare with Step 2; do not assume degradation.
 -- Automatic clustering may already have run on the clustered table; this is
@@ -179,7 +175,7 @@ SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
 -- deterministic totals are calculated from the fixture, not a live rehearsal.
 -- Partition counts are observations, not fixed acceptance values.
 
--- STEP 4b │ Observe automatic clustering, then compare again.
+-- STEP 3b │ Observe automatic clustering, then compare again.
 -- This service uses serverless compute and incurs charges. Its work is
 -- asynchronous and Snowflake decides when reclustering is beneficial.
 -- Wait at most five minutes, periodically rerunning the clustered EXPLAIN below.
@@ -193,9 +189,9 @@ WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
 
 -- STOP/GO: after observing a change or reaching the five-minute limit,
 -- continue to the final comparison. If a measurement fails or class stops
--- early, skip to the cleanup at the end of Step 4.
+-- early, skip to the cleanup at the end of Step 3.
 
--- STEP 4c │ Compare the layouts again with Step 4a.
+-- STEP 3c │ Compare the layouts again with Step 3a.
 -- Use the same cold-cache procedure as above and record EXPLAIN, query IDs and
 -- profile partitions scanned for both tables. Results must remain equal.
 -- A CTAS rebuild can restore ordering to the sorted table, but it does not
@@ -230,7 +226,7 @@ WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
 SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
 
 -- CHECKPOINT: both queries still return 575342 rows and 149590962.53 USD.
--- Compare actual partition counts with Step 4a and report the observed result.
+-- Compare actual partition counts with Step 3a and report the observed result.
 
 -- STOP: suspend automatic reclustering even if no improvement was observed.
 -- Suspending prevents future automatic reclustering; record any in-flight work.
