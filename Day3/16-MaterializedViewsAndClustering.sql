@@ -17,7 +17,7 @@
 -- these settings and grants; skip CREATE rather than replacing it.
 USE ROLE ACCOUNTADMIN;
 
-CREATE WAREHOUSE LAB16_WH
+CREATE OR REPLACE WAREHOUSE LAB16_WH
     WAREHOUSE_SIZE = 'XSMALL'
     ENABLE_QUERY_ACCELERATION = FALSE
     AUTO_SUSPEND = 60
@@ -64,20 +64,54 @@ SELECT COUNT(*) AS ROW_COUNT FROM PERF.TPCH_ORDERS_BY_DATE;
 -- Disable persisted result reuse above. For cold-cache measurements, the
 -- warehouse must fully suspend before it is resumed. Each restart incurs
 -- startup charges and affects any other session using LAB16_WH.
--- Run each restart block one statement at a time: if already SUSPENDED, skip
--- SUSPEND; repeat SHOW until it reports SUSPENDED, then run RESUME. Do not
--- run the block as a batch. Check each profile's cache percentage; if nonzero,
--- restart fully and repeat the measurement.
+-- The permanent procedure runs from a serverless task, not LAB16_WH itself.
+-- It cancels ALL queries on LAB16_WH, suspends it, waits 10 seconds by
+-- default, then resumes it. This simple lab assumes LAB16_WH is running.
+-- The wait is not a guarantee of full suspension; check the query profile.
+-- Pass another number of seconds in the task's CALL to change the wait.
+-- The task has no schedule and only runs when explicitly executed.
+-- ADV_LAB needs OPERATE on LAB16_WH and EXECUTE MANAGED TASK on the account.
+-- The task incurs serverless charges; recreating it can cancel an active run.
+-- If rerunning the setup, first confirm any previous task run has finished.
+-- Remove the earlier no-argument version before creating the new signature.
+DROP TASK IF EXISTS OPS.TASK_RESTART_LAB16_WH;
+DROP PROCEDURE IF EXISTS OPS.SP_RESTART_LAB16_WH();
+
+CREATE OR REPLACE PROCEDURE OPS.SP_RESTART_LAB16_WH(WAIT_SECONDS INTEGER DEFAULT 10)
+RETURNS STRING
+EXECUTE AS CALLER
+AS
+$$
+BEGIN
+    ALTER WAREHOUSE LAB16_WH ABORT ALL QUERIES;
+    ALTER WAREHOUSE LAB16_WH SUSPEND;
+    CALL SYSTEM$WAIT(:WAIT_SECONDS);
+    ALTER WAREHOUSE LAB16_WH RESUME IF SUSPENDED;
+    RETURN 'LAB16_WH restarted: cache cleared,';
+END;
+$$;
+
+CREATE OR REPLACE TASK OPS.TASK_RESTART_LAB16_WH
+    USER_TASK_TIMEOUT_MS = 90000
+    SERVERLESS_TASK_MAX_STATEMENT_SIZE = 'XSMALL'
+AS CALL OPS.SP_RESTART_LAB16_WH();
+
+-- Each EXECUTE TASK below is asynchronous. After each call, STOP: in
+-- Snowsight under Transformation > Tasks, open TASK_RESTART_LAB16_WH and
+-- wait for THIS run to show SUCCEEDED. If it fails or times out, inspect
+-- its run details and resolve the error; do not run the measurement.
+-- Do not run AWAIT from LAB16_WH: ABORT ALL QUERIES cancels that statement.
+-- Do not query task history from LAB16_WH while the task is running: that
+-- can resume it early. Check each profile's cache percentage; if nonzero,
+-- repeat the restart and measurement.
 
 EXPLAIN
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
 FROM PERF.TPCH_ORDERS_BY_DATE
 WHERE O_ORDERDATE BETWEEN DATE'1995-03-01' AND DATE'1995-03-07';
 
-ALTER WAREHOUSE LAB16_WH SUSPEND;
-SHOW WAREHOUSES LIKE 'LAB16_WH';
--- STOP: repeat SHOW until SUSPENDED before running RESUME.
-ALTER WAREHOUSE LAB16_WH RESUME;
+EXECUTE TASK OPS.TASK_RESTART_LAB16_WH;
+-- STOP: wait for this task run to SUCCEED in Snowsight before continuing.
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
 FROM PERF.TPCH_ORDERS_BY_DATE
@@ -99,10 +133,8 @@ EXPLAIN
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
 FROM PERF.TPCH_ORDERS_BY_DATE WHERE O_CUSTKEY = 7918018;
 
-ALTER WAREHOUSE LAB16_WH SUSPEND;
-SHOW WAREHOUSES LIKE 'LAB16_WH';
--- STOP: repeat SHOW until SUSPENDED before running RESUME.
-ALTER WAREHOUSE LAB16_WH RESUME;
+EXECUTE TASK OPS.TASK_RESTART_LAB16_WH;
+-- STOP: wait for this task run to SUCCEED in Snowsight before continuing.
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
 FROM PERF.TPCH_ORDERS_BY_DATE WHERE O_CUSTKEY = 7918018;
@@ -145,10 +177,8 @@ FROM PERF.MVW_BY_CUSTOMER WHERE O_CUSTKEY = 7918018;
 -- STEP 4 │ Measure a direct MV read
 -- ──────────────────────────────────────────────────────────────────────────────
 
-ALTER WAREHOUSE LAB16_WH SUSPEND;
-SHOW WAREHOUSES LIKE 'LAB16_WH';
--- STOP: repeat SHOW until SUSPENDED before running RESUME.
-ALTER WAREHOUSE LAB16_WH RESUME;
+EXECUTE TASK OPS.TASK_RESTART_LAB16_WH;
+-- STOP: wait for this task run to SUCCEED in Snowsight before continuing.
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
 FROM PERF.MVW_BY_CUSTOMER WHERE O_CUSTKEY = 7918018;
@@ -169,10 +199,8 @@ EXPLAIN
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
 FROM PERF.TPCH_ORDERS_BY_DATE WHERE O_CUSTKEY = 7918018;
 
-ALTER WAREHOUSE LAB16_WH SUSPEND;
-SHOW WAREHOUSES LIKE 'LAB16_WH';
--- STOP: repeat SHOW until SUSPENDED before running RESUME.
-ALTER WAREHOUSE LAB16_WH RESUME;
+EXECUTE TASK OPS.TASK_RESTART_LAB16_WH;
+-- STOP: wait for this task run to SUCCEED in Snowsight before continuing.
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
 FROM PERF.TPCH_ORDERS_BY_DATE WHERE O_CUSTKEY = 7918018;
@@ -224,12 +252,18 @@ SHOW MATERIALIZED VIEWS LIKE 'MVW_BY_CUSTOMER' IN SCHEMA PERF;
 -- If cleanup fails, resolve it before leaving; the course stop script also
 -- identifies this MV.
 
--- Stop the dedicated warehouse even if the lab ends before the MV is created.
--- Switch away first; only run SUSPEND if SHOW reports LAB16_WH is STARTED.
+-- First confirm any restart task run has finished in Snowsight; dropping the
+-- task or procedure during a run can interrupt cleanup or restart the warehouse.
+DROP TASK IF EXISTS OPS.TASK_RESTART_LAB16_WH;
+DROP PROCEDURE IF EXISTS OPS.SP_RESTART_LAB16_WH(INTEGER);
+
+-- Drop the dedicated warehouse even if the lab ends before the MV is created.
+-- ACCOUNTADMIN created it, so switch back to that role to drop it.
 USE WAREHOUSE ADV_WH;
+USE ROLE ACCOUNTADMIN;
+DROP WAREHOUSE IF EXISTS LAB16_WH;
 SHOW WAREHOUSES LIKE 'LAB16_WH';
-ALTER WAREHOUSE LAB16_WH SUSPEND;
-SHOW WAREHOUSES LIKE 'LAB16_WH';
--- CHECKPOINT: repeat SHOW until LAB16_WH is SUSPENDED. Storage remains.
+-- CHECKPOINT: LAB16_WH is absent. The table and suspended MV still use storage.
+USE ROLE ADV_LAB;
 
 -- Optional-QAS.sql is the separate query acceleration estimate and experiment.
