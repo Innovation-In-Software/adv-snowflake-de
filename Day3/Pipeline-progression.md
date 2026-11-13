@@ -30,13 +30,11 @@ No new table. Distinguish EXPLAIN predictions from measured execution. Capture q
 
 ```text
 ORDERS_BASE -- sorted CTAS --> ORDERS_SORTED
-      |                            |
-      +---- same date predicate ---+
-                    |
-              totals / profiles -> MEASUREMENTS
+      +-- CLUSTER BY CTAS --> ORDERS_CLUSTERED
+additional 10M rows -> both tables -> date predicate -> totals / profiles
 ```
 
-Create ORDERS_SORTED at the start of this experiment. Compare EXPLAIN partition predictions, exact totals and measured timing; sorted CTAS does not establish the long-term benefit or cost of automatic reclustering. Optional SOS adds a separate ORDERS_SEARCH copy and later removes its search service.
+Create both comparison tables at the start. Compare EXPLAIN partition predictions and profiles before and after the same additional load, then observe the clustered table after a bounded automatic-clustering wait. The service may not run during class; record actual evidence and suspend it afterward. The original 50M-row base stays unchanged. Optional SOS adds a separate ORDERS_SEARCH copy and later removes its search service.
 
 ## Lab 16 - Materialized aggregates and QAS estimate
 

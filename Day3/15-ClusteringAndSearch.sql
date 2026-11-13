@@ -90,10 +90,157 @@ SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
 
 -- Both layouts pruned to 1 of 16 partitions in the measured date-range query.
 -- ORDER BY physically sorts once at CTAS time. CLUSTER BY defines a maintained
--- clustering policy; suspend its serverless reclustering after this comparison.
+-- clustering policy. Automatic clustering remains enabled during the load
+-- and measurements; it is asynchronous and incurs serverless charges.
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- STEP 4 │ Load more data and compare the layouts over time
+-- ──────────────────────────────────────────────────────────────────────────────
+
+-- Run this step once after Step 1; rerun Step 1 to reset before repeating it.
+-- Insert the same deterministic 10 million rows into each table. Dates span
+-- the original range rather than arriving in ORDER_DATE order. ORDERS_BASE
+-- remains at 50 million rows for the other performance labs.
+
+INSERT INTO PERF.ORDERS_SORTED
+WITH NUMBERS AS
+(
+    SELECT ROW_NUMBER() OVER (ORDER BY SEQ4()) - 1 + 50000000 AS N
+    FROM TABLE(GENERATOR(ROWCOUNT => 10000000))
+)
+SELECT N + 1 AS ORDER_ID,
+       MOD(N * 7919, 100000) + 1 AS CUSTOMER_ID,
+       DATEADD('day', MOD(N * 37, 730), '2024-01-01'::DATE) AS ORDER_DATE,
+       IFF(MOD(N, 7) = 0, 'CANCELLED', 'PAID') AS STATUS,
+       ((MOD(N * 97, 50000) + 1000) / 100)::NUMBER(12, 2) AS AMOUNT
+FROM NUMBERS;
+
+INSERT INTO PERF.ORDERS_CLUSTERED
+WITH NUMBERS AS
+(
+    SELECT ROW_NUMBER() OVER (ORDER BY SEQ4()) - 1 + 50000000 AS N
+    FROM TABLE(GENERATOR(ROWCOUNT => 10000000))
+)
+SELECT N + 1 AS ORDER_ID,
+       MOD(N * 7919, 100000) + 1 AS CUSTOMER_ID,
+       DATEADD('day', MOD(N * 37, 730), '2024-01-01'::DATE) AS ORDER_DATE,
+       IFF(MOD(N, 7) = 0, 'CANCELLED', 'PAID') AS STATUS,
+       ((MOD(N * 97, 50000) + 1000) / 100)::NUMBER(12, 2) AS AMOUNT
+FROM NUMBERS;
+
+SELECT 'ORDERED' AS TABLE_NAME, COUNT(*) AS ROW_COUNT FROM PERF.ORDERS_SORTED
+UNION ALL
+SELECT 'CLUSTERED', COUNT(*) FROM PERF.ORDERS_CLUSTERED;
+
+-- CHECKPOINT: 60000000 rows in each table. If a load fails, do not repeat it
+-- blindly: rebuild both comparison tables from Step 1 before retrying Step 4.
+
+-- STEP 4a │ Measure both layouts after the load.
+-- Record each EXPLAIN's partitions assigned/total and each query's ID and
+-- profile partitions scanned. Compare with Step 2; do not assume degradation.
+-- Automatic clustering may already have run on the clustered table; this is
+-- not a controlled measurement of its state before maintenance.
+-- Warehouse suspension affects all sessions using ADV_WH. In a shared account,
+-- use an isolated warehouse instead; do not interrupt another user's work.
+
+USE ROLE ACCOUNTADMIN;
+ALTER WAREHOUSE ADV_WH SUSPEND;
+ALTER WAREHOUSE ADV_WH RESUME;
+USE ROLE ADV_LAB;
+
+EXPLAIN USING TEXT
+SELECT COUNT(*), SUM(AMOUNT)
+FROM PERF.ORDERS_SORTED
+WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
+
+SELECT COUNT(*) AS ORDER_COUNT, SUM(AMOUNT) AS ORDER_AMOUNT
+FROM PERF.ORDERS_SORTED
+WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
+
+SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
+
+USE ROLE ACCOUNTADMIN;
+ALTER WAREHOUSE ADV_WH SUSPEND;
+ALTER WAREHOUSE ADV_WH RESUME;
+USE ROLE ADV_LAB;
+
+EXPLAIN USING TEXT
+SELECT COUNT(*), SUM(AMOUNT)
+FROM PERF.ORDERS_CLUSTERED
+WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
+
+SELECT COUNT(*) AS ORDER_COUNT, SUM(AMOUNT) AS ORDER_AMOUNT
+FROM PERF.ORDERS_CLUSTERED
+WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
+
+SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
+
+-- CHECKPOINT: both queries return 575342 rows and 149590962.53 USD. These
+-- deterministic totals are calculated from the fixture, not a live rehearsal.
+-- Partition counts are observations, not fixed acceptance values.
+
+-- STEP 4b │ Observe automatic clustering, then compare again.
+-- This service uses serverless compute and incurs charges. Its work is
+-- asynchronous and Snowflake decides when reclustering is beneficial.
+-- Wait at most five minutes, periodically rerunning the clustered EXPLAIN below.
+-- Record whether pruning changes; no observed change within the wait is
+-- inconclusive, not a failure. Never wait for a particular partition count.
+
+EXPLAIN USING TEXT
+SELECT COUNT(*), SUM(AMOUNT)
+FROM PERF.ORDERS_CLUSTERED
+WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
+
+-- STOP/GO: after observing a change or reaching the five-minute limit,
+-- continue to the final comparison. If a measurement fails or class stops
+-- early, skip to the cleanup at the end of Step 4.
+
+-- STEP 4c │ Compare the layouts again with Step 4a.
+-- Use the same cold-cache procedure as above and record EXPLAIN, query IDs and
+-- profile partitions scanned for both tables. Results must remain equal.
+-- A CTAS rebuild can restore ordering to the sorted table, but it does not
+-- maintain that order automatically after later loads.
+
+USE ROLE ACCOUNTADMIN;
+ALTER WAREHOUSE ADV_WH SUSPEND;
+ALTER WAREHOUSE ADV_WH RESUME;
+USE ROLE ADV_LAB;
+
+EXPLAIN USING TEXT
+SELECT COUNT(*), SUM(AMOUNT) FROM PERF.ORDERS_SORTED
+WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
+
+SELECT COUNT(*) AS ORDER_COUNT, SUM(AMOUNT) FROM PERF.ORDERS_SORTED
+WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
+
+SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
+
+USE ROLE ACCOUNTADMIN;
+ALTER WAREHOUSE ADV_WH SUSPEND;
+ALTER WAREHOUSE ADV_WH RESUME;
+USE ROLE ADV_LAB;
+
+EXPLAIN USING TEXT
+SELECT COUNT(*), SUM(AMOUNT) FROM PERF.ORDERS_CLUSTERED
+WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
+
+SELECT COUNT(*) AS ORDER_COUNT, SUM(AMOUNT) FROM PERF.ORDERS_CLUSTERED
+WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
+
+SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
+
+-- CHECKPOINT: both queries still return 575342 rows and 149590962.53 USD.
+-- Compare actual partition counts with Step 4a and report the observed result.
+
+-- STOP: suspend automatic reclustering even if no improvement was observed.
+-- Suspending prevents future automatic reclustering; record any in-flight work.
 USE ROLE ACCOUNTADMIN;
 ALTER TABLE ADV_ORDERS.PERF.ORDERS_CLUSTERED SUSPEND RECLUSTER;
 USE ROLE ADV_LAB;
+
+SHOW TABLES LIKE 'ORDERS_CLUSTERED' IN SCHEMA PERF;
+-- CHECKPOINT: automatic_clustering is OFF. If cleanup fails, resolve it before
+-- leaving; the shutdown script also identifies this table.
 
 -- Optional-SOS.sql contains the selective-lookup experiment.
 -- Do not wait indefinitely for serverless build in core classroom time.
