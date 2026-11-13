@@ -45,11 +45,29 @@ SELECT 'CLUSTERED', COUNT(*) FROM PERF.ORDERS_CLUSTERED;
 
 ALTER SESSION SET USE_CACHED_RESULT = FALSE;
 
--- Suspend and resume to clear the warehouse cache before this table's query.
-USE ROLE ACCOUNTADMIN;
-ALTER WAREHOUSE ADV_WH SUSPEND;
-ALTER WAREHOUSE ADV_WH RESUME;
-USE ROLE ADV_LAB;
+-- A temporary procedure belongs to this worksheet session; recreate it if you
+-- open a new session. It runs with the caller's privileges: environment setup
+-- grants ADV_LAB OPERATE on ADV_WH, so no role switch is needed.
+-- Suspending and resuming clears the warehouse data cache. This is separate
+-- from USE_CACHED_RESULT, which disables reuse of persisted query results.
+-- Restarting affects other sessions and may incur warehouse startup charges.
+-- In a shared account, use an isolated warehouse and adapt this procedure;
+-- do not suspend a warehouse another user is working on.
+CREATE OR REPLACE TEMPORARY PROCEDURE OPS.SP_RESTART_ADV_WH()
+RETURNS STRING
+LANGUAGE SQL
+EXECUTE AS CALLER
+AS
+$$
+BEGIN
+    ALTER WAREHOUSE ADV_WH SUSPEND;
+    ALTER WAREHOUSE ADV_WH RESUME;
+    RETURN 'ADV_WH suspended and resumed: ADV_WH cache cleared.';
+END;
+$$;
+
+-- Restart before each comparison; resolve any error before measuring.
+CALL OPS.SP_RESTART_ADV_WH();
 
 EXPLAIN USING TEXT
 SELECT COUNT(*), SUM(AMOUNT)
@@ -66,10 +84,7 @@ SELECT *
 FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
 
 -- Clear the warehouse cache again before the keyed-table comparison.
-USE ROLE ACCOUNTADMIN;
-ALTER WAREHOUSE ADV_WH SUSPEND;
-ALTER WAREHOUSE ADV_WH RESUME;
-USE ROLE ADV_LAB;
+CALL OPS.SP_RESTART_ADV_WH();
 
 EXPLAIN USING TEXT
 SELECT COUNT(*), SUM(AMOUNT)
@@ -129,10 +144,7 @@ SELECT 'CLUSTERED', COUNT(*) FROM PERF.ORDERS_CLUSTERED;
 -- Warehouse suspension affects all sessions using ADV_WH. In a shared account,
 -- use an isolated warehouse instead; do not interrupt another user's work.
 
-USE ROLE ACCOUNTADMIN;
-ALTER WAREHOUSE ADV_WH SUSPEND;
-ALTER WAREHOUSE ADV_WH RESUME;
-USE ROLE ADV_LAB;
+CALL OPS.SP_RESTART_ADV_WH();
 
 EXPLAIN USING TEXT
 SELECT COUNT(*), SUM(AMOUNT)
@@ -145,10 +157,7 @@ WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
 
 SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
 
-USE ROLE ACCOUNTADMIN;
-ALTER WAREHOUSE ADV_WH SUSPEND;
-ALTER WAREHOUSE ADV_WH RESUME;
-USE ROLE ADV_LAB;
+CALL OPS.SP_RESTART_ADV_WH();
 
 EXPLAIN USING TEXT
 SELECT COUNT(*), SUM(AMOUNT)
@@ -187,10 +196,7 @@ WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
 -- A CTAS rebuild can restore ordering to the sorted table, but it does not
 -- maintain that order automatically after later loads.
 
-USE ROLE ACCOUNTADMIN;
-ALTER WAREHOUSE ADV_WH SUSPEND;
-ALTER WAREHOUSE ADV_WH RESUME;
-USE ROLE ADV_LAB;
+CALL OPS.SP_RESTART_ADV_WH();
 
 EXPLAIN USING TEXT
 SELECT COUNT(*), SUM(AMOUNT) FROM PERF.ORDERS_SORTED
@@ -201,10 +207,7 @@ WHERE ORDER_DATE BETWEEN DATE'2024-06-01' AND DATE'2024-06-07';
 
 SELECT * FROM TABLE(GET_QUERY_OPERATOR_STATS(LAST_QUERY_ID(-1)));
 
-USE ROLE ACCOUNTADMIN;
-ALTER WAREHOUSE ADV_WH SUSPEND;
-ALTER WAREHOUSE ADV_WH RESUME;
-USE ROLE ADV_LAB;
+CALL OPS.SP_RESTART_ADV_WH();
 
 EXPLAIN USING TEXT
 SELECT COUNT(*), SUM(AMOUNT) FROM PERF.ORDERS_CLUSTERED
