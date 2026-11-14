@@ -1,6 +1,6 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
-Optional — selective search optimization
+-- Optional — selective search optimization
 1) Copy sample orders into an independent table
 2) Compare the same customer lookup before and after search optimization
 3) Inspect pruning and remove the lab resources
@@ -63,6 +63,7 @@ WHERE O_CUSTKEY = 5000000;
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS TOTAL_PRICE
 FROM PERF.TPCH_ORDERS_SOS
 WHERE O_CUSTKEY = 5000000;
+
 SET SOS_OFF_ID = LAST_QUERY_ID();
 
 SELECT OPERATOR_TYPE, OPERATOR_STATISTICS
@@ -78,6 +79,11 @@ FROM TABLE(GET_QUERY_OPERATOR_STATS($SOS_OFF_ID));
 ALTER TABLE PERF.TPCH_ORDERS_SOS ADD SEARCH OPTIMIZATION ON EQUALITY(O_CUSTKEY);
 
 SHOW TABLES LIKE 'TPCH_ORDERS_SOS' IN SCHEMA PERF;
+
+SHOW TABLES LIKE 'TPCH_ORDERS_SOS' IN SCHEMA PERF
+->>
+SELECT "name", "rows", "search_optimization", "search_optimization_progress", "bytes", "search_optimization_bytes"
+FROM $1;
 -- STOP: repeat SHOW until search_optimization_progress is 100. Initialization
 -- runs in the background and can take several minutes; if it does not finish,
 -- investigate or proceed to cleanup. Do not compare before it is ready.
@@ -96,6 +102,7 @@ WHERE O_CUSTKEY = 5000000;
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS TOTAL_PRICE
 FROM PERF.TPCH_ORDERS_SOS
 WHERE O_CUSTKEY = 5000000;
+
 SET SOS_ON_ID = LAST_QUERY_ID();
 
 SELECT OPERATOR_TYPE, OPERATOR_STATISTICS
@@ -109,6 +116,12 @@ FROM TABLE(GET_QUERY_OPERATOR_STATS($SOS_ON_ID));
 -- guaranteed. EXPLAIN estimates and actual operator statistics can differ.
 
 SELECT QUERY_ID, TOTAL_ELAPSED_TIME, EXECUTION_TIME, BYTES_SCANNED
+FROM TABLE(ADV_ORDERS.INFORMATION_SCHEMA.QUERY_HISTORY_BY_SESSION(RESULT_LIMIT => 100))
+WHERE QUERY_ID IN ($SOS_OFF_ID, $SOS_ON_ID);
+
+SELECT (MAX(TOTAL_ELAPSED_TIME)/MIN(TOTAL_ELAPSED_TIME))::number(38,1)  elapsed_time_factor, 
+       (MAX(EXECUTION_TIME)/MIN(EXECUTION_TIME))::number(38,1)          execution_time_factor,
+       (MAX(BYTES_SCANNED)/MIN(BYTES_SCANNED))::number(38,1)            bytes_scanned_factor
 FROM TABLE(ADV_ORDERS.INFORMATION_SCHEMA.QUERY_HISTORY_BY_SESSION(RESULT_LIMIT => 100))
 WHERE QUERY_ID IN ($SOS_OFF_ID, $SOS_ON_ID);
 
