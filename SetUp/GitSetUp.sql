@@ -8,6 +8,6 @@ ENABLED = TRUE;
 
 -- When creating a Workspace from Git repository use the following:
 -- Repository URL: https://github.com/Innovation-In-Software/adv-snowflake-de
--- Workspace Name: adv-snowflake-de
+-- Workspace Name: adv-snowflake-de-student
 -- API Integration: GIT_GITHUB_INT_ADE_CLASS
 -- Public repository
