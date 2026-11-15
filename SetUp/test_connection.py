@@ -23,6 +23,7 @@ def main() -> None:
         "password": os.environ["SNOWFLAKE_PASSWORD"],
         "role": os.getenv("SNOWFLAKE_ROLE", "ACCOUNTADMIN").strip(),
         "login_timeout": 30,
+        "enable_server_session_keep_alive_auto_detection": True,
     }
 
     connection = None
