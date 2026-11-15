@@ -6,7 +6,7 @@
 3) Reconcile task-maintained state with Dynamic Table results
 ----------------------------------------------------------------------------------*/
 
--- Diagram: Pipeline-progression.md, Lab 08 - Declarative Dynamic Gold.
+-- Diagram: Pipeline-progression.md, Lab 11 - Declarative Dynamic Gold.
 
 USE ROLE ADV_LAB;
 USE WAREHOUSE ADV_WH;

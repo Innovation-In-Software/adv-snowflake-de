@@ -5,7 +5,7 @@
 3) Verify same-file replay and stop detailed logging
 ----------------------------------------------------------------------------------*/
 
--- Lab 02A: submit a new file to the existing pipe through the Snowpipe REST API.
+-- Lab 03: submit a new file to the existing pipe through the Snowpipe REST API.
 -- Run this worksheet in sections; keep it open while running Python locally.
 -- Reuse EVENTS_STAGE, ORDERS_PIPE, and EVENTS_RAW from Lab 02.
 -- ──────────────────────────────────────────────────────────────────────────────
@@ -41,15 +41,15 @@ ALTER PIPE ADV_ORDERS.BRONZE.ORDERS_PIPE SET LOG_EVENT_LEVEL = DEBUG;
 
 -- If deliberately paused by 99-Stop.sql, resume before running the client:
 -- ALTER PIPE ORDERS_PIPE SET PIPE_EXECUTION_PAUSED = FALSE;
-SELECT COUNT(*) AS raw_rows FROM EVENTS_RAW; -- 8 before 02A; 12 after
-SELECT COUNT(*) AS pending_rows FROM EVENTS_STREAM; -- 8 before; 12 after, before Lab 03
+SELECT COUNT(*) AS raw_rows FROM EVENTS_RAW; -- 8 before Lab 03; 12 after
+SELECT COUNT(*) AS pending_rows FROM EVENTS_STREAM; -- 8 before; 12 after, before Lab 07
 
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 3: PAUSE HERE. Run locally from the repository root:
 -- ──────────────────────────────────────────────────────────────────────────────
--- python Day1/02A-PythonSnowpipe.py
--- Then rerun the counts above: 12 raw and 12 pending before Lab 03.
+-- python Day1/03-PythonSnowpipe.py
+-- Then rerun the counts above: 12 raw and 12 pending before Lab 07.
 -- Run Python again with the same filename; both counts should stay at 12.
 
 -- ──────────────────────────────────────────────────────────────────────────────

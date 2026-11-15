@@ -6,7 +6,7 @@
 3) Recover a training object and explain the limits of local recovery
 ----------------------------------------------------------------------------------*/
 
--- Diagram: Pipeline-progression.md, Lab 17 - Cache, compute and local recovery.
+-- Diagram: Pipeline-progression.md, Lab 20 - Cache, compute and local recovery.
 
 USE ROLE ADV_LAB;
 USE WAREHOUSE ADV_WH;

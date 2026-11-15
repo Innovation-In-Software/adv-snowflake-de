@@ -13,20 +13,22 @@ Auto-suspend can put an idle warehouse to sleep, but enabled task/refresh worklo
 
 ## Before starting
 
-Complete Day 1 through `06-Snowpark-Development.ipynb`. Expected state including Lab 02A: 15 raw and inbox rows, three current orders, one BAD_AMOUNT rejection, no pending stream rows, two active US orders totaling USD 165. Suspend the root task between demonstrations. Use the same ADV_ORDERS objects throughout.
+Complete Day 1 through Lab 09 and run `Day1/99-Stop.sql`. The handoff is 14 raw and inbox rows, three current orders, one BAD_AMOUNT rejection, no pending stream rows, and two active US orders totaling USD 165. Both tasks are suspended and the pipe is paused. Use the same ADV_ORDERS objects throughout.
 
-The core policy, masking and scheduled data-quality branches require an appropriate account edition and privileges. All students need the same enabled features; an instructor-only demonstration does not satisfy a hands-on objective. The preflight and final validation report identify any remaining account-specific restrictions.
+The core policy, masking and scheduled data-quality branches require an appropriate account edition and privileges. The instructor must validate these capabilities in all student accounts before class.
 
 ## Execute in order
 
-1. `07-Day2-Preflight.sql` — establish state and schemas. Resolve a failed business checkpoint before creating Gold.
-2. `08-DynamicGold.sql` — create the detail and aggregate Dynamic Tables, inspect actual refresh mode/history, and demonstrate a reversible USD 180 → 165 change. Wait for each refresh to succeed.
-3. `09-GovernedGold.sql` — create three roles in every environment; apply view policies; test US, EU and auditor. Execute the expected denied Silver read separately, then restore ADV_LAB. Keep secondary roles disabled for these tests.
-4. `10-QualityAndObservability.sql` — immediate checks and custom metric are the required path. After defining the schedule, use the STOP/GO checkpoint: if scheduled evidence appears, record it as a bonus; if it does not arrive during class, record that branch as BLOCKED, not failed, then continue and detach the metric.
-5. `11-GoldConsumers.sql` — consume the US contract. The Streamlit and Governed Notebook UI paths are unrehearsed templates / discussion-only until the UI import path is verified; do not treat them as validated hands-on steps.
+1. `10-Snowpark-Development.ipynb` — verify the handoff, develop and deploy Snowpark, and process one guarded replay. Wait for the task graph; verify raw/inbox 15, current 3, pending 0 and active value 165. End the notebook session after the lab.
+2. `11-DynamicGold.sql` — create the detail and aggregate Dynamic Tables, inspect actual refresh mode/history, and demonstrate a reversible USD 180 → 165 change. Wait for each refresh to succeed.
+3. `12-GovernedGold.sql` — create three roles in every environment; apply view policies; test US, EU and auditor. Execute the expected denied Silver read separately, then restore ADV_LAB. Keep secondary roles disabled for these tests.
+4. `13-QualityAndObservability.sql` — immediate checks and custom metric are the required path. After defining the schedule, use the STOP/GO checkpoint: if scheduled evidence appears, record it as a bonus; if it does not arrive during class, record that branch as BLOCKED, not failed, then continue and detach the metric.
+5. `14-GoldConsumers.sql` — consume the US contract. The Streamlit and Governed Notebook UI paths are unrehearsed templates / discussion-only until the UI import path is verified; do not treat them as validated hands-on steps.
 6. `99-Day2-Stop.sql` — suspend refreshes and compute after class; retain course data.
 
-For an optional local Streamlit run, install `python -m pip install -r Day2\requirements-local.txt`, then run `python -m streamlit run Day2\Streamlit-Gold.py -- --local` from the repository root. The root `.env` must provide `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER`, and `SNOWFLAKE_PRIVATE_KEY_FILE` (and `SNOWFLAKE_PRIVATE_KEY_FILE_PWD` if the key is encrypted). The user must have `ADV_ANALYST_US`; the app connects with that role, disables secondary roles, and uses `ADV_WH` and `ADV_ORDERS.CONSUMER`. This local path is separate from the unrehearsed hosted UI path.
+`Snowpark-OrderTransform.py` is the reference source for Lab 10. `Snowpark-Pipeline.ipynb` is an alternative, unvalidated notebook-consumer branch, not an additional required lab. Never run two consumers against the same stream.
+
+For an optional local Streamlit run, install `python -m pip install -r Day2\requirements-local.txt`, then run `python -m streamlit run Day2\14-Streamlit-Gold.py -- --local` from the repository root. The root `.env` must provide `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER`, and `SNOWFLAKE_PRIVATE_KEY_FILE` (and `SNOWFLAKE_PRIVATE_KEY_FILE_PWD` if the key is encrypted). The user must have `ADV_ANALYST_US`; the app connects with that role, disables secondary roles, and uses `ADV_WH` and `ADV_ORDERS.CONSUMER`. This local path is separate from the unrehearsed hosted UI path.
 
 ## Optional branches
 

@@ -6,7 +6,7 @@
 3) Compare one-time ordering with a maintained clustering policy
 ----------------------------------------------------------------------------------*/
 
--- Diagram: Pipeline-progression.md, Lab 15 - Physical ordering comparison.
+-- Diagram: Pipeline-progression.md, Lab 16 - Physical ordering comparison.
 
 USE ROLE ADV_LAB;
 USE WAREHOUSE ADV_WH;
@@ -217,7 +217,7 @@ SHOW TABLES LIKE 'ORDERS_CLUSTERED' IN SCHEMA PERF;
 -- CHECKPOINT: automatic_clustering is OFF. If cleanup fails, resolve it before
 -- leaving; the shutdown script also identifies this table.
 
--- Optional-SOS.sql contains the selective-lookup experiment.
+-- 17-SearchOptimization.sql contains the selective-lookup experiment.
 -- Do not wait indefinitely for serverless build in core classroom time.
 -- If prevalidated search access paths are unavailable, compare the diagnosis
 -- and documented plan without claiming a measured SOS result.

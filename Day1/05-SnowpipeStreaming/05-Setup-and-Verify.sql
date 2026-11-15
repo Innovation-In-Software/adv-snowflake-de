@@ -1,11 +1,11 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
-1) Prepare an isolated target for an instructor Snowpipe Streaming demo
+1) Prepare an isolated target for the Snowpipe Streaming lab
 2) Send three rows from local Python without creating or uploading files
 3) Inspect committed rows and clean up the demo
 ----------------------------------------------------------------------------------*/
 
--- Instructor demo only; this does not change the Day 1 pipeline or its counts.
+-- Lab 05 does not change the Day 1 pipeline or its counts.
 -- Use a dedicated warehouse so this independent demo does not use ADV_WH.
 -- CREATE fails if the name exists: verify ownership before using or dropping it.
 USE ROLE ACCOUNTADMIN;
@@ -31,7 +31,7 @@ CREATE TABLE EVENTS
     payload VARIANT
 );
 
--- STEP 2: PAUSE HERE. Run Demos/SnowpipeStreaming/stream_rows.py with local Python 3.12.
+-- STEP 2: PAUSE HERE. Run Day1/05-SnowpipeStreaming/stream_rows.py with local Python 3.12.
 -- The SDK table-mode client uses an automatically created streaming pipe.
 -- No named stage, file format, PUT command, or SQL CDC stream is needed.
 

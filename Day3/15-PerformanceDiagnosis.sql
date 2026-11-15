@@ -6,7 +6,7 @@
 3) Choose a hypothesis based on selectivity and physical work
 ----------------------------------------------------------------------------------*/
 
--- Diagram: Pipeline-progression.md, Lab 14 - Measure before tuning.
+-- Diagram: Pipeline-progression.md, Lab 15 - Measure before tuning.
 
 USE ROLE ADV_LAB;
 USE WAREHOUSE ADV_WH;

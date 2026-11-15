@@ -1,4 +1,4 @@
-# Snowflake Advanced 3-day class Lab: 02A - Snowpipe REST client
+# Snowflake Advanced 3-day class Lab: 03 - Snowpipe REST client
 # Copyright © 2026 Innovation In Software Corporation. All rights reserved.
 """Upload duplicate events and submit their file to the existing Snowpipe REST API."""
 
@@ -175,7 +175,7 @@ def main() -> None:
         wait_for_rows(cursor, base_url, headers)
 
         total = cursor.execute("SELECT COUNT(*) FROM ADV_ORDERS.BRONZE.EVENTS_RAW").fetchone()[0]
-        print(f"Total Bronze rows: {total}; expected 12 immediately after Labs 02 and 02A.")
+        print(f"Total Bronze rows: {total}; expected 12 immediately after Labs 02 and 03.")
 
 
 if __name__ == "__main__":

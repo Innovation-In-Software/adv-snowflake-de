@@ -5,8 +5,8 @@
 3) Commit valid writes and roll back conflicting writes before re-raising an error
 ----------------------------------------------------------------------------------*/
 
--- EXTRA | Day 1 | SQL scripting bridge (allow approximately 30 minutes)
--- Run after environment setup and before Lab 03, one complete block at a time.
+-- Lab 06 | Day 1 | SQL scripting bridge (allow approximately 30 minutes)
+-- Run after environment setup and before Lab 07, one complete block at a time.
 -- STEPS 3 and 4 deliberately raise errors: inspect them, then continue checking.
 -- Run CREATE and CALL statements outside any caller-started transaction.
 -- Rerun from STEP 1 to reset only these disposable OPS demonstration objects.
@@ -77,7 +77,7 @@ CALL OPS.SP_SAFE_DIVIDE(10, 0); -- CHECKPOINT: Error: Division by zero
 -- so its caller receives a failure. These are different error contracts.
 
 -- EXECUTE AS OWNER in one line: the procedure runs with its owner's privileges,
--- not the caller's. That is why Lab 03's SP_APPLY_EVENTS can write to SILVER
+-- not the caller's. That is why Lab 07's SP_APPLY_EVENTS can write to SILVER
 -- when called by a role authorized to execute the procedure. A task itself
 -- normally runs with its TASK owner's privileges; the procedure's EXECUTE AS
 -- setting determines the privileges inside the procedure. Both owners happen
@@ -147,11 +147,11 @@ SELECT * FROM OPS.BRIDGE_DEMO ORDER BY order_id;  -- Expected: o1, o2.
 CALL OPS.SP_BRIDGE_APPLY('o1', 999.00);   -- Expected: error -20001, 'Order already exists in BRIDGE_DEMO'
 SELECT * FROM OPS.BRIDGE_DEMO ORDER BY order_id;  -- Expected: still only o1, o2. The 999.00 row is not there.
 
--- Now read Lab 03's SP_APPLY_EVENTS with this in hand and name each part:
+-- Now read Lab 07's SP_APPLY_EVENTS with this in hand and name each part:
 -- DECLARE + custom exception, BEGIN TRANSACTION, the conflict check + RAISE,
 -- the MERGE in place of our INSERT, COMMIT, EXCEPTION WHEN OTHER + ROLLBACK + RAISE.
 -- It uses the same transaction/error-handling pattern, not the same business rule.
--- Lab 03 checks conflicting event payloads; this miniature checks duplicate orders.
+-- Lab 07 checks conflicting event payloads; this miniature checks duplicate orders.
 -- This count-based example is for one classroom session, not a concurrency-safe
 -- uniqueness constraint. The explicit transaction provides rollback, not uniqueness.
 
@@ -213,8 +213,8 @@ DROP TABLE IF EXISTS OPS.BRIDGE_DEMO;
 --   - If the room is strong on scripting, cut Step 1 to a 2-minute demo and keep
 --     Steps 2 and 3, discussing Step 4 briefly. Otherwise allow about 30 minutes
 --     and pay for it from slide time, never from a core lab.
---   - The key idea before Lab 03: THIS procedure explicitly manages a transaction.
---     That is why Lab 03 says "create the procedure outside any explicit
+--   - The key idea before Lab 07: THIS procedure explicitly manages a transaction.
+--     That is why Lab 07 says "create the procedure outside any explicit
 --     transaction" — the procedure begins and commits (or rolls back) its own.
 --     A stored procedure is not automatically one transaction simply because
 --     it contains a BEGIN ... END scripting block.

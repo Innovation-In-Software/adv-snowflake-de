@@ -6,7 +6,7 @@
 3) Record exact scale and configuration before measurement
 ----------------------------------------------------------------------------------*/
 
--- Diagram: Pipeline-progression.md, Lab 13 - Independent performance sandbox.
+-- Diagram: Pipeline-progression.md, Lab 15 - Independent performance sandbox.
 
 USE ROLE ADV_LAB;
 USE WAREHOUSE ADV_WH;

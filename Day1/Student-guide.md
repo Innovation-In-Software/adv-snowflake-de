@@ -1,6 +1,6 @@
 # Day 1 — Build and operate the order-event pipeline
 
-Open [Pipeline progression](Pipeline-progression.md) alongside the scripts to follow the objects and connections added by each lab. A [graphical PDF version](Pipeline-progression.pdf) provides one page per lab.
+Open [Pipeline progression](Pipeline-progression.md) alongside the scripts to follow the objects and connections added by each lab. A [PDF version](Pipeline-progression.pdf) is also available.
 
 
 ## Required before leaving class
@@ -15,33 +15,27 @@ For each numbered step: instructor explains the purpose, executes it, pauses; ev
 
 ## Run order and pacing
 
-Run SetUp/00, then 01 → 02 → 02A → 02B → 03 → 04 → 05 → 06. Lab 01 exposes deterministic mock events through a view and unloads JSON files to an internal stage. Lab 02 remains the core ingestion sequence: manual `COPY INTO` for batch1 and bounded Snowpipe refresh for batch2.
+Run SetUp/00, then Labs 01 through 09 in order. Lab 01 stages deterministic mock events; Lab 02 loads them with `COPY INTO` and bounded Snowpipe refresh.
 
-After Lab 02, [Lab 02A](02A-Python-Snowpipe.md) uploads four duplicate event deliveries to the existing stage and submits the new file to `ORDERS_PIPE` through the Snowpipe REST API. This raises core Bronze and pending stream counts from 8 to 12. [Lab 02B](02B-DirectoryTriggered.md) uses a separate stage and target for a directory-table stream and triggered task. Suspend the triggered task after 02B. Follow the planned-sequence counts in the 02A checkpoint table.
+1. `01-OrderEvents.sql` and `02-IngestAndSnowpipe.sql` — stage and ingest events.
+2. [Lab 03](03-Python-Snowpipe.md) — submit four duplicate deliveries via the Snowpipe REST API, reaching 12 raw and pending rows.
+3. [Lab 04](04-DirectoryTriggered.md) — use a separate directory-table stream and triggered task; suspend its task afterward.
+4. [Lab 05: Snowpipe Streaming](05-SnowpipeStreaming/README.md) — append three records through a named channel to an isolated table; clean up its schema and warehouse.
+5. `06-SQLScripting.sql` — practice blocks, procedures and transaction ownership before Silver.
+6. `07-Silver.sql` — develop and commit the Bronze-to-Silver transformation.
+7. `08-TasksAndGold.sql` — orchestrate the pipeline and inspect Gold.
+8. `09-Acceptance.sql`, then `09-ChangesClause.sql` — reconcile the pipeline and compare CHANGES with stream consumption.
+9. `99-Stop.sql` — stop background work and preserve the pipeline for Day 2.
 
-Optional instructor demonstration: [Snowpipe Streaming](../Demos/SnowpipeStreaming/README.md) contrasts file ingestion with appending records through a named channel. It uses a separate schema and warehouse; complete its cleanup afterward.
+Teaching durations have not yet been timed with a class. Lab 09 ends with 14 raw and inbox rows; Day 2's Snowpark replay adds one delivery.
 
-Continue with 03 → 04 → 05 → 06. Run 05 before 06 because acceptance expects 14 deliveries; 06 adds one replay delivery, bringing the total to 15. Use Course-runbook.md for the revised proposed day schedule, including Snowpark and deployment time. Teaching durations have not yet been timed with a class.
-
-## Lab 03 — develop the queries before making them reusable
+## Lab 07 — develop the queries before making them reusable
 
 Start by inspecting Bronze events and creating both known Silver tables: EVENT_INBOX for delivery history and ORDERS_CURRENT for the current-state contract consumed by Gold. With the destination established, develop the processing that populates it. The sequence then populates the inbox inside trial transactions so each conversion, classification and conflict SELECT has real data to inspect. Roll back each trial before creating its view: CREATE VIEW implicitly commits an open transaction. Then inspect the latest-state candidates and run MERGE manually inside a trial transaction. Compare the visible result, roll back and verify that the starting inbox/target counts and stream availability are restored. Finally create SP_APPLY_EVENTS from the verified steps, call it to commit processing, and call it again to check repeat execution. Use the same worksheet/session throughout each trial. A cleanup DELETE after committing would not restore a consumed stream offset.
 
-## Lab 05 - acceptance
+## Lab 09 - acceptance
 
-Part A first states the expected pipeline data. Compare expected and actual control totals: all eight controls must pass. INTERSECT then displays three matching current-order rows, one Gold row (US / 2 / 165), and one rejected event (e3 / BAD_AMOUNT). Require both the matching rows and the total-row controls; extra or duplicate actual rows can otherwise be hidden by INTERSECT. Run after Lab 04 finishes and before Lab 06 adds its replay.
-
-## Lab 06 - develop Snowpark in a notebook, then deploy
-
-1. Import/open **06-Snowpark-Development.ipynb** in Snowflake. It is the single required Lab 06 file; use the same runtime, role, warehouse and package setup for every participant.
-2. Run its SQL setup section to establish the three destinations and region reference. Then develop the Python transformations cell by cell.
-3. Compare three candidates with the SQL baseline and run the reversible transaction trial. Assemble the handler from the verified functions.
-4. Continue in the same notebook: SQL cells create/call the Python 3.12 procedure and inspect its resolved package dependency. Snowpark is unpinned at creation.
-5. Switch the existing task graph using the notebook SQL cells. Pause for asynchronous completion, then verify raw/inbox=15, current=3 and active value=165. On rerun, the replay guard inserts nothing and an empty-stream task can be SKIPPED.
-
-`Snowpark-OrderTransform.py` remains the complete reusable source for reference; the notebook deployment cell embeds identical source. It is not a separate required execution step. The former SQL companion is retained only in Archive/Lab06-before-consolidation. SQL remains sufficient for this business example; this lab teaches Snowpark APIs and development-to-deployment workflow.
-
-Optional: `Snowpark-Pipeline.ipynb` omits development trials and invokes the handler once. Do not enable two consumers of EVENTS_STREAM. Notebook import/runtime and headless execution must be rehearsed in the class account; handler tests do not certify notebook hosting.
+Part A first states the expected pipeline data. Compare expected and actual control totals: all eight controls must pass. INTERSECT then displays three matching current-order rows, one Gold row (US / 2 / 165), and one rejected event (e3 / BAD_AMOUNT). Require both the matching rows and the total-row controls; extra or duplicate actual rows can otherwise be hidden by INTERSECT. Run after Lab 08 finishes and before Lab 10 adds its replay.
 
 ## Project and expected results
 
@@ -50,10 +44,10 @@ Bronze holds immutable raw event payloads plus file lineage. Silver retains cons
 | Checkpoint | Raw | Inbox | Current orders | Rejects | Active orders / USD |
 |---|---:|---:|---:|---:|---|
 | After bulk batch1 | 4 | 0 | 0 | 0 | Not built |
-| After Snowpipe batch2 (before 02A) | 8 | 0 | 0 | 0 | Not built |
+| After Snowpipe batch2 (before Lab 03) | 8 | 0 | 0 | 0 | Not built |
 | After SP_APPLY_EVENTS | 12 | 12 | 3 | 1 | 2 / 150 |
 | After task update | 14 | 14 | 3 | 1 | 2 / 165 |
-| After Snowpark replay | 15 | 15 | 3 | 1 | 2 / 165 |
+| After Day 2 Snowpark replay | 15 | 15 | 3 | 1 | 2 / 165 |
 
 The duplicate e2 is identical. e3 has invalid amount text and remains a reject even after e6 supplies a later valid state for o3. The late e7 must not overwrite o1 version 2. Duplicate e8 must not double order value. An immutable event-ID payload conflict raises an exception and rolls back stream consumption; production conflict repair is outside this Day 1 implementation.
 
@@ -73,7 +67,7 @@ The duplicate e2 is identical. e3 has invalid amount text and remains a reject e
 
 ### Explicit bulk fallback (only if the Snowpipe branch fails)
 
-Record the Snowpipe result as FAILED/BLOCKED. Pause the pipe, wait for in-flight ingestion to settle, inspect history and raw counts. If the instructor elects to continue, abandon the failed pipe branch for the class, load only missing files with COPY using the same column mapping from lab 02 and stage batch2, without FORCE. Verify exact raw rows and event IDs before Silver. In lab 04 use the same bulk path for update.json.gz instead of REFRESH. Record PIPE versus BULK_FALLBACK in the rehearsal log; completing the transformation chain does not pass the Snowpipe objective. Mixed ingestion can duplicate data; if file-level completion is uncertain use a fresh lab environment rather than guessing.
+Record the Snowpipe result as FAILED/BLOCKED. Pause the pipe, wait for in-flight ingestion to settle, inspect history and raw counts. If the instructor elects to continue, abandon the failed pipe branch for the class, load only missing files with COPY using the same column mapping from lab 02 and stage batch2, without FORCE. Verify exact raw rows and event IDs before Silver. In lab 08 use the same bulk path for update.json.gz instead of REFRESH. Record PIPE versus BULK_FALLBACK in the rehearsal log; completing the transformation chain does not pass the Snowpipe objective. Mixed ingestion can duplicate data; if file-level completion is uncertain use a fresh lab environment rather than guessing.
 
 ### Optional AWS auto-ingest experiment
 

@@ -6,7 +6,7 @@
 3) Observe scheduled metric evidence and stop serverless monitoring
 ----------------------------------------------------------------------------------*/
 
--- Diagram: Pipeline-progression.md, Lab 10 - Quality and observability.
+-- Diagram: Pipeline-progression.md, Lab 13 - Quality and observability.
 
 USE ROLE ADV_LAB;
 USE WAREHOUSE ADV_WH;
@@ -52,7 +52,7 @@ SELECT COUNT(*) AS INBOX_ROWS FROM SILVER.EVENT_INBOX;
 
 SELECT COUNT(*) AS PENDING_ROWS FROM BRONZE.EVENTS_STREAM;
 
--- Full Day 1 including Lab 02A and Snowpark replay: raw/inbox 15, pending 0.
+-- After Day 2 Snowpark replay: raw/inbox 15, pending 0.
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 2 │ Evaluate a custom data metric before scheduling it

@@ -1,4 +1,4 @@
-# Snowflake Advanced 3-day class Lab: instructor Snowpipe Streaming demo
+# Snowflake Advanced 3-day class Lab 05: Snowpipe Streaming
 # Copyright © 2026 Innovation In Software Corporation. All rights reserved.
 """Send three rows directly through a Snowpipe Streaming named channel."""
 
@@ -18,7 +18,7 @@ def required_env(name):
 
 
 def main():
-    # STEP 1: Reuse the local account/user and registered key pair from Lab 02A.
+    # STEP 1: Reuse the local account/user and registered key pair from Lab 03.
     repo_root = Path(__file__).resolve().parents[2]
     load_dotenv()
     account = required_env("SNOWFLAKE_ACCOUNT")

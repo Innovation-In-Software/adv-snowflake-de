@@ -1,12 +1,12 @@
-# Instructor demo: Snowpipe Streaming
+# Lab 05: Snowpipe Streaming
 
-Show this after Lab 02A. The demo sends three events directly from local Python
+Run after Lab 04. This lab sends three events directly from local Python
 to a separate Snowflake table; it does not change the Day 1 pipeline or counts.
 Run the numbered steps rather than executing the SQL file all at once.
 
 ## What students should notice
 
-Lab 02A creates a file, uploads it to a stage, and submits its name to
+Lab 03 creates a file, uploads it to a stage, and submits its name to
 `ORDERS_PIPE`. Here the application appends Python dictionaries to a Snowpipe
 Streaming **named channel**, waits for a committed offset, and queries the
 table. No application-created file, PUT, or file-ingestion pipe is used.
@@ -33,18 +33,18 @@ uses a default streaming pipe, separate from `ORDERS_PIPE`.
 From the repository root, install once:
 
 ```powershell
-python -m pip install -r Demos\SnowpipeStreaming\requirements.txt
+python -m pip install -r Day1\05-SnowpipeStreaming\requirements.txt
 python -m pip show snowpipe-streaming
 ```
 
-## Demonstration
+## Exercise
 
-1. In `01-Setup-and-Verify.sql`, execute the warehouse setup and Step 1.
+1. In `05-Setup-and-Verify.sql`, execute the warehouse setup and Step 1.
    The names must be unused; if creation fails, stop and check ownership.
 2. From the repository root, run:
 
    ```powershell
-   python Demos\SnowpipeStreaming\stream_rows.py
+   python Day1\05-SnowpipeStreaming\stream_rows.py
    ```
 
 3. Note the printed run ID. `append_row` is not a commit; wait for the
@@ -52,12 +52,12 @@ python -m pip show snowpipe-streaming
 4. Run Step 3 in SQL. For that run ID, expect event numbers 1, 2, and 3,
    three rows and three distinct event numbers. Each `PAYLOAD` is a JSON object.
    Step 4 shows the default streaming pipe.
-5. After inspecting the results, run Step 5 to drop the demo schema and
-   dedicated warehouse. If stopping early, remove only resources this demo
+5. After inspecting the results, run Step 5 to drop the lab schema and
+   dedicated warehouse. If stopping early, remove only resources this lab
    actually created; do not drop an existing resource with the same name.
 
 Each invocation creates a new run ID and channel and intentionally adds three
-rows. This demo does **not** implement restart recovery or event deduplication.
+rows. This lab does **not** implement restart recovery or event deduplication.
 For exactly-once recovery with a named channel, a real producer must resume
 from the last committed offset using a durable replayable source.
 

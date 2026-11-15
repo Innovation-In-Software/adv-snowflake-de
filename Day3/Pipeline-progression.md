@@ -4,7 +4,7 @@ Snowflake Advanced Data Engineering
 
 These diagrams show intended structure at each lab checkpoint. Read the SQL comments and verify actual outputs; diagrams do not certify an untested run. Arrows are labelled data dependencies or control triggers. A view arrow means a query dependency, not a stored copy. The diagrams use plain Markdown code blocks and require no diagram renderer.
 
-## Lab 13 - Independent performance sandbox
+## Lab 15 - Independent performance sandbox
 
 ```text
 SQL GENERATOR -> PERF.ORDERS_BASE (50,000,000)
@@ -16,7 +16,7 @@ Existing business pipeline stays separate: current=3 / active value=165
 
 Create all performance tables in the initial setup section. CTAS defines and populates the generated fixtures together; it is intentional setup, not business ingestion. MEASUREMENTS stores case names and query IDs, not a guaranteed performance improvement.
 
-## Lab 14 - Measure before tuning
+## Lab 15 - Measure before tuning
 
 ```text
 ORDERS_BASE -> date range / point lookup ----+
@@ -26,7 +26,7 @@ ORDERS_BASE + CUSTOMERS -> join -------------+-> query IDs -> MEASUREMENTS
 
 No new table. Distinguish EXPLAIN predictions from measured execution. Capture query IDs immediately after each measured query. Record scanned partitions, bytes, spill, queueing and cache evidence where available.
 
-## Lab 15 - Physical ordering comparison
+## Lab 16 - Physical ordering comparison
 
 ```text
 ORDERS_BASE -- sorted CTAS --> ORDERS_SORTED
@@ -34,9 +34,13 @@ ORDERS_BASE -- sorted CTAS --> ORDERS_SORTED
 additional 10M rows -> both tables -> date predicate -> totals / profiles
 ```
 
-Create both comparison tables at the start. Compare side-by-side EXPLAIN partition predictions and query profiles before and after the same additional load. Automatic clustering may not run during class; equal plans are a valid result, and a difference alone does not establish its cause. Record actual evidence and suspend the service afterward. The original 50M-row base stays unchanged. Optional SOS independently copies SF100 sample orders to a separate table, compares a customer lookup, and drops the table and warehouse afterward.
+Create both comparison tables at the start. Compare side-by-side EXPLAIN partition predictions and query profiles before and after the same additional load. Automatic clustering may not run during class; equal plans are a valid result, and a difference alone does not establish its cause. Record actual evidence and suspend the service afterward. The original 50M-row base stays unchanged.
 
-## Lab 16 - Alternative clustering key
+## Lab 17 - Search optimization
+
+Copy SF100 orders into an independent table, compare customer lookups before and after SOS, and drop the table and dedicated warehouse after recording readiness and pruning.
+
+## Lab 18 - Alternative clustering key
 
 ```text
 TPC-H SF100 ORDERS -> TPCH_ORDERS_BY_DATE (150M, O_ORDERDATE)
@@ -46,9 +50,13 @@ TPC-H SF100 ORDERS -> TPCH_ORDERS_BY_DATE (150M, O_ORDERDATE)
                               base query -> optimizer may choose MV
 ```
 
-Lab 16 copies TPC-H sample orders into an independent table; Lab 15's tables stay unchanged. It uses a dedicated `LAB16_WH` and an on-demand serverless restart task so cache resets do not interrupt pipeline work. Confirm the task run succeeds before measuring. Compare date and customer scans, then direct MV results with the base query and inspect whether the optimizer chooses a rewrite. A covered projection and `SELECT *` illustrate column coverage; a no-rewrite is valid. The copy and MV add storage and maintenance costs; remove the task and procedure, suspend the MV, and drop the warehouse afterward. QAS estimation and optional execution are in `Optional-QAS.sql`, using a separate bounded warehouse.
+Lab 18 copies TPC-H sample orders into an independent table; Lab 16's tables stay unchanged. It uses a dedicated `LAB16_WH` and an on-demand serverless restart task so cache resets do not interrupt pipeline work. Confirm the task run succeeds before measuring. Compare date and customer scans, then direct MV results with the base query and inspect whether the optimizer chooses a rewrite. A covered projection and `SELECT *` illustrate column coverage; a no-rewrite is valid. The copy and MV add storage and maintenance costs; remove the task and procedure, suspend the MV, and drop the warehouse afterward.
 
-## Lab 17 - Cache, compute and local recovery
+## Lab 19 - Query acceleration
+
+Estimate QAS eligibility for SF1 and SF1000 queries on a separate warehouse, inspect actual usage if eligible, and clean up the warehouse.
+
+## Lab 20 - Cache, compute and local recovery
 
 ```text
 ORDERS_BASE + CUSTOMERS -> ADV_TUNE_WH (XS / Small)
@@ -62,7 +70,7 @@ Two student worksheets -> concurrent queries -> inspect queueing
 
 Prepare RECOVERY_COPY before the experiments. The original business pipeline is untouched. Keep result-cache, warehouse-cache and sizing observations separate. Local UNDROP demonstrates recovery of this disposable copy, not cross-region readiness.
 
-## Lab 18 - AWS external function
+## Lab 21 - AWS external function
 
 ```text
 Snowflake SQL -> external function -> API integration

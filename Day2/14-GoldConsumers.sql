@@ -6,7 +6,7 @@
 3) Prepare a narrowly owned hosted app and a safe share extension
 ----------------------------------------------------------------------------------*/
 
--- Diagram: Pipeline-progression.md, Lab 11 - Consumers.
+-- Diagram: Pipeline-progression.md, Lab 14 - Consumers.
 
 USE ROLE ADV_LAB;
 USE WAREHOUSE ADV_WH;
@@ -53,7 +53,7 @@ USE ROLE ADV_ANALYST_US;
 USE SECONDARY ROLES NONE;
 
 -- In Snowsight create a Streamlit app in ADV_ORDERS.CONSUMER using ADV_WH.
--- Paste Streamlit-Gold.py. Create it as ADV_ANALYST_US, NOT ADV_LAB.
+-- Paste 14-Streamlit-Gold.py. Create it as ADV_ANALYST_US, NOT ADV_LAB.
 -- The app is deliberately US-scoped for all its viewers; it is not per-viewer RBAC.
 -- Confirm 2 active US orders / 165 and masked contact values.
 -- App environment/creation is a separately rehearsed UI branch; core SQL works
@@ -63,7 +63,7 @@ USE SECONDARY ROLES NONE;
 -- STEP 3 │ Run the same Streamlit app locally
 -- ──────────────────────────────────────────────────────────────────────────────
 
--- The same Streamlit-Gold.py can run on your workstation instead of in
+-- The same 14-Streamlit-Gold.py can run on your workstation instead of in
 -- Snowsight. It still queries the governed Snowflake consumer view.
 --
 -- Before starting, complete the local key-pair setup. In the repository-root
@@ -75,7 +75,7 @@ USE SECONDARY ROLES NONE;
 -- From a PowerShell terminal at the repository root, not a SQL worksheet:
 --
 -- python -m pip install -r Day2\requirements-local.txt
--- python -m streamlit run Day2\Streamlit-Gold.py -- --local
+-- python -m streamlit run Day2\14-Streamlit-Gold.py -- --local
 --
 -- Install dependencies once; use --local to select the key-pair connection.
 -- Streamlit may ask for an optional email on first launch: press Enter to skip.

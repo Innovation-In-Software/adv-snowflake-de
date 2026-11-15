@@ -33,16 +33,20 @@ SHOW TASKS IN SCHEMA OPS;
 
 ALTER TASK OPS.APPLY_TASK SUSPEND;
 
--- Also stop the optional Lab 06 notebook consumer if it was created.
+-- Also stop the alternative notebook consumer if it was created.
 
 ALTER TASK IF EXISTS OPS.NOTEBOOK_APPLY_TASK SUSPEND;
 
 ALTER TASK OPS.AUDIT_TASK SUSPEND;
 
+ALTER TASK IF EXISTS BRONZE.DIR_EVENTS_LOAD_TASK SUSPEND;
+
 ALTER PIPE BRONZE.ORDERS_PIPE SET PIPE_EXECUTION_PAUSED=TRUE;
 -- Suspension does not cancel an already executing task. Inspect task history;
 -- wait for in-flight work to finish before any reset.
 SHOW TASKS IN SCHEMA OPS;
+
+SHOW TASKS IN SCHEMA BRONZE;
 
 SELECT SYSTEM$PIPE_STATUS('ADV_ORDERS.BRONZE.ORDERS_PIPE');
 

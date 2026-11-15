@@ -9,7 +9,7 @@
 
 -- 03 | Develop, inspect, then make Silver processing reusable.
 
--- Diagram: Pipeline-progression.md, Lab 03 - Bronze to current Silver state.
+-- Diagram: Pipeline-progression.md, Lab 07 - Bronze to current Silver state.
 
 USE ROLE ADV_LAB;
 USE WAREHOUSE ADV_WH;
@@ -17,7 +17,7 @@ USE DATABASE ADV_ORDERS;
 USE SCHEMA SILVER;
 
 -- Run one statement or commented group at a time in the SAME worksheet/session.
--- Pause at each result. The required sequence includes Lab 02A: start with
+-- Pause at each result. The required sequence includes Lab 03: start with
 -- twelve raw rows, an empty Silver inbox, and twelve unconsumed stream rows.
 -- Current orders, rejects, Gold values, and drained-stream checkpoints are below.
 -- Tables use IF NOT EXISTS so rerunning setup preserves data and stream progress.

@@ -1,6 +1,6 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
--- Optional — selective search optimization
+Lab 17 — selective search optimization
 1) Copy sample orders into an independent table
 2) Compare the same customer lookup before and after search optimization
 3) Inspect pruning and remove the lab resources

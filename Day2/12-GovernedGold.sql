@@ -6,7 +6,7 @@
 3) Verify positive and negative access under isolated roles
 ----------------------------------------------------------------------------------*/
 
--- Diagram: Pipeline-progression.md, Lab 09 - Governed consumption boundary.
+-- Diagram: Pipeline-progression.md, Lab 12 - Governed consumption boundary.
 
 USE ROLE ADV_LAB;
 USE WAREHOUSE ADV_WH;
@@ -16,6 +16,10 @@ USE SCHEMA OPS;
 ALTER SESSION SET TIMEZONE = 'UTC';
 
 ALTER SESSION SET QUERY_TAG = 'ADV_2026_DAY2';
+
+CREATE SCHEMA IF NOT EXISTS GOVERNANCE;
+
+CREATE SCHEMA IF NOT EXISTS CONSUMER;
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 1 │ Provision student-equivalent consumer roles

@@ -13,11 +13,11 @@ mixins:
   streamlit_shared:
     artifacts:
       - pyproject.toml
-      - Streamlit-Gold.py
+      - 14-Streamlit-Gold.py
       - .streamlit/config.toml
     title: US order operations
     query_warehouse: ADV_WH
     compute_pool: SYSTEM_COMPUTE_POOL_CPU
     meta:
       role: ADV_ANALYST_US
-    main_file: Streamlit-Gold.py
+    main_file: 14-Streamlit-Gold.py

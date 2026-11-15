@@ -6,7 +6,7 @@
 
 -- 05 | Day 1 acceptance and handoff
 
--- Diagram: Pipeline-progression.md, Lab 05 - Acceptance evidence.
+-- Diagram: Pipeline-progression.md, Lab 09 - Acceptance evidence.
 
 USE ROLE ADV_LAB;
 USE WAREHOUSE ADV_WH;
@@ -16,8 +16,8 @@ USE SCHEMA OPS;
 -- ============================================================================
 -- PART A: ACCEPTANCE - compare the completed pipeline with the expected state.
 -- ============================================================================
--- Run after Lab 04 has completed both tasks successfully, and BEFORE Lab 06.
--- Required sequence includes Lab 02A: EVENTS_RAW / EVENT_INBOX = 14 / 14.
+-- Run after Lab 08 has completed both tasks successfully, and BEFORE Lab 10.
+-- Required sequence includes Lab 03: EVENTS_RAW / EVENT_INBOX = 14 / 14.
 -- Expected current orders (exactly 3 rows):
 -- order_id | event_id | version | event_time (UTC)      | status    | amount | region
 -- o1       | e4       | 2       | 2026-11-02 10:00:00   | PAID      | 120    | US

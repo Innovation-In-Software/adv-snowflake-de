@@ -7,7 +7,7 @@
 
 -- 04 | Gold and observable task graph
 
--- Diagram: Pipeline-progression.md, Lab 04 - Task orchestration and Gold.
+-- Diagram: Pipeline-progression.md, Lab 08 - Task orchestration and Gold.
 
 USE ROLE ADV_LAB;
 USE WAREHOUSE ADV_WH;

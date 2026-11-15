@@ -13,6 +13,6 @@ The slide deck is not present in this repository, so this is a change log item f
 
 ## Day 1 ingestion labs
 
-- [ ] Contrast Lab 02 REFRESH with 02A Snowpipe REST insertFiles using the same stage and pipe; distinguish file replay from duplicate events in a new file.
-- [ ] Show 8/12, 10/14 and 11/15 delivery checkpoints; Silver inbox preserves deliveries while current orders and Gold business totals remain unchanged.
-- [ ] Show 02B's separate directory stage, stream, task and target.
+- [ ] Contrast Lab 02 REFRESH with Lab 03 Snowpipe REST insertFiles using the same stage and pipe; distinguish file replay from duplicate events in a new file.
+- [ ] Show the 8, 12, 14 and 15 delivery checkpoints; Silver inbox preserves deliveries while current orders and Gold business totals remain unchanged.
+- [ ] Show Lab 04's separate directory stage, stream, task and target.

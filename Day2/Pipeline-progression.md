@@ -4,19 +4,18 @@ Snowflake Advanced Data Engineering
 
 These diagrams show intended structure at each lab checkpoint. Read the SQL comments and verify actual outputs; diagrams do not certify an untested run. Arrows are labelled data dependencies or control triggers. A view arrow means a query dependency, not a stored copy. The diagrams use plain Markdown code blocks and require no diagram renderer.
 
-## Lab 07 - Verify the handoff
+## Lab 10 - Snowpark development and deployment
 
 ```text
-Day 1: Bronze -> Silver current -> Gold view
-                          |
-                 baseline / role / feature checks
-                          |
-                 GOVERNANCE and CONSUMER schemas
+Day 1 handoff: raw / inbox 14, pending 0, current 3, active value 165
+EVENTS_STREAM -> EVENT_INBOX -> Snowpark transformations -> candidates
+                                                       -> ORDERS_CURRENT
+APPLY_TASK -> Snowpark procedure -> AUDIT_TASK
 ```
 
-No new processing table. Confirm current=3, active value=165 and no pending stream rows. Retain existing data and offsets; establish the supporting schemas and feature profile.
+Verify the handoff and stopped tasks and pipe before changing anything. Develop, trial and deploy the Snowpark procedure, then process a guarded synthetic replay. After the graph succeeds, raw/inbox=15 and the business totals remain unchanged.
 
-## Lab 08 - Declarative Dynamic Gold
+## Lab 11 - Declarative Dynamic Gold
 
 ```text
 ORDERS_CURRENT ----+
@@ -27,7 +26,7 @@ ORDER_CONTACTS ----+          TARGET_LAG         five-minute goal
 
 Define ORDER_CONTACTS first, then populate its reference data. Dynamic Table definitions create and maintain the outputs from SELECTs, so definition and processing are deliberately coupled. Create detail before its downstream metrics dependency. A controlled Silver correction changes value 165 -> 180; restore it to 165 and inspect actual refresh history.
 
-## Lab 09 - Governed consumption boundary
+## Lab 12 - Governed consumption boundary
 
 ```text
 ORDERS_CURRENT -> ORDER_DETAIL_DT -> CONSUMER.VW_ORDERS
@@ -40,7 +39,7 @@ ORDERS_CURRENT -> ORDER_DETAIL_DT -> CONSUMER.VW_ORDERS
 
 No new base table. Attach masking, row-access policy and classification tag at the consumer view. US sees o1/o3; EU sees cancelled o2; auditor sees all rows and unmasked synthetic contacts. Disable secondary roles for tests; verify a source read is denied separately.
 
-## Lab 10 - Quality and observability
+## Lab 13 - Quality and observability
 
 ```text
 ORDER PIPELINE -> immediate SQL controls
@@ -54,7 +53,7 @@ DQ_DEMO -> NEGATIVE_AMOUNT_COUNT -> direct scalar result
 
 Define DQ_DEMO first. Develop/evaluate the metric before its optional scheduled association. The demo contains 10, -5 and NULL: negative count=1. Scheduled evidence is asynchronous and entitlement-dependent; detach the metric and unset its schedule. These checks observe the pipeline; they do not change order state.
 
-## Lab 11 - Consumers
+## Lab 14 - Consumers
 
 ```text
 ORDER_DETAIL_DT -> CONSUMER.VW_ORDERS -> US worksheet
@@ -65,7 +64,7 @@ No new base table. Consumers use the governed boundary. The hosted app is owned 
 
 The Streamlit and Governed Notebook UI paths are unrehearsed templates / discussion-only until the UI import path is verified.
 
-## Lab 12 - Optional Iceberg interoperability
+## Iceberg interoperability (discussion only)
 
 ```text
 UNREHEARSED TEMPLATE / DISCUSSION-ONLY

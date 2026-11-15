@@ -19,7 +19,7 @@
 -- continues indefinitely: we pause it to prevent further unintended ingestion.
 -- Days 2-3 add refresh/maintenance services: stop those explicitly as shown below.
 -- End active notebook sessions using their controls if a notebook was used.
--- Lab 18 has separate Snowflake and AWS cleanup steps in its notebook;
+-- Lab 21 has separate Snowflake and AWS cleanup steps in its notebook;
 -- this shutdown script does not remove those resources.
 -- Preserved tables/stage files still incur storage charges after compute stops.
 -- Sources:
@@ -45,11 +45,13 @@ USE SECONDARY ROLES NONE;
 
 ALTER TASK OPS.APPLY_TASK SUSPEND;
 
--- Also stop the optional Lab 06 notebook consumer if it was created.
+-- Also stop the alternative notebook consumer if it was created.
 
 ALTER TASK IF EXISTS OPS.NOTEBOOK_APPLY_TASK SUSPEND;
 
 ALTER TASK OPS.AUDIT_TASK SUSPEND;
+
+ALTER TASK IF EXISTS BRONZE.DIR_EVENTS_LOAD_TASK SUSPEND;
 
 ALTER PIPE BRONZE.ORDERS_PIPE SET PIPE_EXECUTION_PAUSED = TRUE;
 
@@ -62,17 +64,19 @@ ALTER MATERIALIZED VIEW PERF.MVW_BY_CUSTOMER SUSPEND;
 -- Optional branches only if their objects were created:
 -- If the SOS lab was interrupted, run its Step 3 cleanup to drop its
 -- search-optimized table and dedicated warehouse.
--- If Lab 15 reclustering has not yet been stopped, run as the table owner
--- (normally ADV_LAB, which creates it in Lab 15):
+-- If Lab 16 reclustering has not yet been stopped, run as the table owner
+-- (normally ADV_LAB, which creates it in Lab 16):
 -- ALTER TABLE PERF.ORDERS_CLUSTERED SUSPEND RECLUSTER;
 -- If the QAS lab was interrupted, run its Step 4 cleanup to disable QAS and
 -- drop ADV_QAS_WH as ACCOUNTADMIN.
 -- ALTER WAREHOUSE ADV_TUNE_WH SUSPEND;
--- DMF lab 10 detaches its metric; verify no association remains on OPS.DQ_DEMO.
+-- DMF lab 13 detaches its metric; verify no association remains on OPS.DQ_DEMO.
 
 SHOW DYNAMIC TABLES IN SCHEMA GOLD;
 
 SHOW TASKS IN SCHEMA OPS;
+
+SHOW TASKS IN SCHEMA BRONZE;
 
 SHOW MATERIALIZED VIEWS IN SCHEMA PERF;
 

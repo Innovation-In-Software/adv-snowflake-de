@@ -13,23 +13,24 @@ Auto-suspend can put an idle warehouse to sleep, but enabled task/refresh worklo
 
 ## Execute in order
 
-1. `13-PerformanceSetup.sql` — 50 million deterministic orders and 100,000 customers generated with SQL. Verify scale, uniqueness and customer 42's 500 rows.
-2. `14-PerformanceDiagnosis.sql` — disable result reuse in this session; capture date-filter, point-lookup and join query IDs; inspect scanning, operator work, spilling and queued time. Write a hypothesis before changing anything.
-3. `15-ClusteringAndSearch.sql` — compare sorted and clustered tables side by side using EXPLAIN and query profiles, then load the same additional rows into both and compare again. Equal plans are a valid result; suspend automatic clustering afterward. A sorted CTAS is not automatic clustering.
-4. `16-MaterializedViewsAndClustering.sql` — copy 150 million TPC-H orders, compare date and customer access patterns, and test a customer-clustered materialized view directly and through optimizer rewrite. This independent experiment uses `LAB16_WH` and an on-demand serverless restart task; confirm each restart completes, then remove the task and procedure, suspend the view, and drop the warehouse. Requires access to `SNOWFLAKE_SAMPLE_DATA.TPCH_SF100`; use `Optional-QAS.sql` for query acceleration.
-5. `17-WarehouseCacheAndRecovery.sql` — compare persisted results and warehouse cache; use a separate tuning warehouse for XS/Small comparison; optional concurrent worksheets; clone/drop/undrop a disposable table.
-6. `18-AWS-External-Function.ipynb` — build an AWS Lambda and API Gateway endpoint, connect it to Snowflake with an API integration and external function, test calls, and clean up resources on both platforms. Requires an AWS account and a Snowflake-hosted notebook; follow one cell and AWS console step at a time.
-7. `99-CourseStop.sql` — stop course tasks, pipe, Dynamic Tables, materialized-view maintenance and warehouses. Confirm any optional services are also stopped.
+1. **Lab 15:** `15-PerformanceSetup.sql`, then `15-PerformanceDiagnosis.sql` — generate the 50-million-row fixture and measure query profiles before tuning.
+2. **Lab 16:** `16-ClusteringAndSearch.sql` — compare sorted and clustered layouts and suspend automatic clustering afterward.
+3. **Lab 17:** `17-SearchOptimization.sql` — compare customer lookups before and after SOS; wait for readiness and clean up the isolated resources.
+4. **Lab 18:** `18-MaterializedViewsAndClustering.sql` — compare access patterns and a customer-clustered materialized view using SF100 sample orders. Remove the restart task and procedure, suspend the view, and drop the dedicated `LAB16_WH`.
+5. **Lab 19:** `19-QueryAcceleration.sql` — test QAS eligibility and service usage using the dedicated warehouse; drop it afterward.
+6. **Lab 20:** `20-WarehouseCacheAndRecovery.sql` — compare caching and warehouse sizes, then clone/drop/undrop a disposable table.
+7. **Lab 21:** `21-AWS-External-Function.ipynb` — build, test and clean up the Snowflake and AWS resources; requires an AWS account and a Snowflake-hosted notebook.
+8. `99-CourseStop.sql` — stop course tasks, pipe, Dynamic Tables, maintenance and warehouses.
 
 ## Instructor rehearsal evidence
 
 A prior one-million-row rehearsal put both layouts in one micro-partition, so it could not demonstrate date pruning; that remains a scale lesson, not the lab outcome. In the 50-million-row instructor rehearsal on an X-Small warehouse, generation took 6.8 seconds of query execution; the date-range EXPLAIN assigned 8/8 baseline partitions and 1/16 sorted partitions. Both queries returned 479,452 rows and $124,655,461.53 total amount; measured execution was 74 ms baseline versus 17 ms sorted, with 710,609,408 versus 31,742,976 bytes scanned. These figures are rehearsal evidence, not fixed student acceptance values—record each account's actual plan, profile and results, and do not promise a runtime speedup.
 
-## Optional services
+## Service considerations
 
-`Optional-SOS.sql`: copy SF100 sample orders to an independent table and compare a customer lookup before and after search optimization on a dedicated warehouse. Wait for readiness, inspect actual pruning, and drop the table and warehouse afterward; storage and serverless maintenance incur charges.
+`17-SearchOptimization.sql`: copy SF100 sample orders to an independent table and compare a customer lookup before and after search optimization on a dedicated warehouse. Wait for readiness, inspect actual pruning, and drop the table and warehouse afterward; storage and serverless maintenance incur charges.
 
-`Optional-QAS.sql`: compare SF1 and SF1000 sample queries on a dedicated warehouse; check eligibility before enabling QAS, then inspect actual service usage and cost. The SF1000 scan was eligible in QA, but eligibility and acceleration can vary. Drop the dedicated warehouse afterward.
+`19-QueryAcceleration.sql`: compare SF1 and SF1000 sample queries on a dedicated warehouse; check eligibility before enabling QAS, then inspect actual service usage and cost. The SF1000 scan was eligible in QA, but eligibility and acceleration can vary. Drop the dedicated warehouse afterward.
 
 ## Measurement worksheet
 

@@ -6,11 +6,11 @@
 3) Separate direct MV performance from the optimizer's rewrite decision
 ----------------------------------------------------------------------------------*/
 
--- Diagram: Pipeline-progression.md, Lab 16 - Alternative clustering key.
+-- Diagram: Pipeline-progression.md, Lab 18 - Alternative clustering key.
 -- Materialized views require Snowflake Enterprise Edition. This lab also
 -- requires SELECT access to SNOWFLAKE_SAMPLE_DATA.TPCH_SF100.ORDERS.
 -- This independent experiment creates a separate 150M-row copy and warehouse;
--- Lab 15's tables and the main pipeline warehouse remain unchanged.
+-- Lab 16's tables and the main pipeline warehouse remain unchanged.
 -- Create a dedicated warehouse so cache resets do not interrupt pipeline work.
 -- If LAB16_WH already exists, verify it is dedicated to this lab and has
 -- these settings and grants; skip CREATE rather than replacing it.
@@ -320,4 +320,4 @@ SHOW WAREHOUSES LIKE 'LAB16_WH';
 -- CHECKPOINT: LAB16_WH is absent. The table and suspended MV still use storage.
 USE ROLE ADV_LAB;
 
--- Optional-QAS.sql is the separate query acceleration estimate and experiment.
+-- 19-QueryAcceleration.sql is the separate query acceleration estimate and experiment.

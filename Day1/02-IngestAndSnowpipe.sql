@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS EVENTS_RAW
 -- A stream tracks source changes, not business-event uniqueness.
 -- Create it BEFORE COPY/Snowpipe inserts so those rows are available to Silver.
 -- A SELECT inspects pending rows without advancing the offset.
--- Committed DML using the stream consumes its changes; Lab 03 demonstrates
+-- Committed DML using the stream consumes its changes; Lab 07 demonstrates
 -- transactional consumption into the durable Silver inbox.
 
 CREATE STREAM IF NOT EXISTS EVENTS_STREAM
@@ -152,5 +152,5 @@ FROM TABLE(INFORMATION_SCHEMA.COPY_HISTORY(
 -- Parseable JSON can still violate business rules (e3). Bronze preserves it.
 
 SELECT COUNT(*) AS pending_rows
-FROM EVENTS_STREAM; -- 8 before Lab 03 consumes them; 0 after its successful commit
+FROM EVENTS_STREAM; -- 8 before Lab 07 consumes them; 0 after its successful commit
 

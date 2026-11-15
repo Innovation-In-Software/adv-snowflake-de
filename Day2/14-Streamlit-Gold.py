@@ -1,6 +1,6 @@
 # Copyright © 2026 Innovation In Software Corporation. All rights reserved.
 # Optional hosted consumer: create as ADV_ANALYST_US in Snowsight.
-# Run locally with: python -m streamlit run Day2\Streamlit-Gold.py -- --local
+# Run locally with: python -m streamlit run Day2\14-Streamlit-Gold.py -- --local
 import os
 import sys
 from pathlib import Path

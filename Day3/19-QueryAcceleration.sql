@@ -1,6 +1,6 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
-Optional — Query Acceleration Service (QAS)
+Lab 19 — Query Acceleration Service (QAS)
 1) Compare ineligible and eligible sample-data queries
 2) Run the eligible query with QAS off and on
 3) Inspect actual service usage, performance and cost
@@ -8,7 +8,7 @@ Optional — Query Acceleration Service (QAS)
 
 -- QAS requires Enterprise Edition and access to SNOWFLAKE_SAMPLE_DATA
 -- TPCH_SF1 and TPCH_SF1000. This independent experiment uses its own
--- warehouse and does not change the main pipeline or Lab 16's objects.
+-- warehouse and does not change the main pipeline or Lab 18's objects.
 -- The SF1000 query scans a large table and can take over a minute.
 
 USE ROLE ACCOUNTADMIN;

@@ -5,8 +5,8 @@
 3) Contrast repeatable CHANGES queries with committed stream consumption
 ----------------------------------------------------------------------------------*/
 
--- EXTRA | Day 1 | The CHANGES clause (allow approximately 15 minutes)
--- Run after Lab 05 and before Lab 06, in ONE worksheet/session throughout.
+-- Lab 09 | Day 1 | The CHANGES clause (allow approximately 15 minutes)
+-- Run after 09-Acceptance.sql and before Lab 10, in ONE worksheet/session throughout.
 -- Disposable OPS objects keep this example separate from the order pipeline.
 -- Rerun from STEP 1 to reset only this demonstration.
 
@@ -151,9 +151,9 @@ UNSET (changes_start, changes_end);
 
 -- ACCEPTANCE: DEFAULT=4 on repeated reads; APPEND_ONLY=1; sink=4; stream=0
 -- after committed consumption; DEFAULT still=4 before cleanup.
--- Re-run Lab 05 acceptance: raw/inbox=14/14, current orders=3, Gold=US/2/165.
--- If Lab 06 has already added its replay, raw/inbox=15/15 instead; this extra
--- lab does not change either pipeline baseline.
+-- Re-run Lab 09 acceptance: raw/inbox=14/14, current orders=3, Gold=US/2/165.
+-- If Lab 10 has already added its replay, raw/inbox=15/15 instead; this
+-- exercise does not change either pipeline baseline.
 -- History must still be retained AND change tracking must cover the interval.
 -- CHANGES is not a permanent audit log or an automatically saved cursor.
 -- Sources:
