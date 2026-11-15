@@ -14,16 +14,17 @@ from dotenv import load_dotenv
 os.environ.setdefault("SS_LOG_LEVEL", "warn")
 from snowflake.ingest.streaming import StreamingIngestClient
 
-TOTAL_EVENTS = 1000
-EVENTS_PER_GROUP = 100
+TOTAL_EVENTS = 1000  # How many sample events to generate, not the commit checkpoint.
+CHECKPOINT_SIZE = 250  # Wait for committed progress after this many appends.
 PAUSE_SECONDS = 2
 
 
 def append_events(channel, run_id):
     # These groups simulate bursts from a source. The SDK independently manages
     # network buffering/batching; a group is not a transaction or commit boundary.
-    for start in range(1, TOTAL_EVENTS + 1, EVENTS_PER_GROUP):
-        end = min(start + EVENTS_PER_GROUP - 1, TOTAL_EVENTS)
+    last_submitted_offset = None
+    for start in range(1, TOTAL_EVENTS + 1, CHECKPOINT_SIZE):
+        end = min(start + CHECKPOINT_SIZE - 1, TOTAL_EVENTS)
         for number in range(start, end + 1):
             channel.append_row(
                 {
@@ -33,9 +34,23 @@ def append_events(channel, run_id):
                 },
                 str(number),
             )
+            # Advance only after append_row succeeds. Acceptance is not commitment.
+            last_submitted_offset = number
         print(f"Appended events {start}-{end} ({end}/{TOTAL_EVENTS}); commit not yet confirmed.", flush=True)
+        # Capture the last submitted source position, not the planned event count.
+        # This waits for SDK-managed commits; it does not issue a SQL COMMIT
+        # or make these rows an atomic transaction.
+        target_offset = last_submitted_offset
+        print(f"Waiting for committed offset {target_offset}...", flush=True)
+        channel.wait_for_commit(
+            lambda token, target=target_offset: token is not None and int(token) >= target,
+            timeout_seconds=60,
+        )
+        print(f"Offset {target_offset} committed.", flush=True)
         if end < TOTAL_EVENTS:
+            print(f"Pausing {PAUSE_SECONDS} seconds before the next group...", flush=True)
             time.sleep(PAUSE_SECONDS)
+    return last_submitted_offset
 
 
 def required_env(name):
@@ -68,7 +83,7 @@ def main():
     # Each invocation deliberately has a new channel/run ID and adds TOTAL_EVENTS rows.
     run_id = uuid.uuid4().hex
     print(f"Run ID: {run_id}", flush=True)
-    print(f"Sending {TOTAL_EVENTS} events in groups of {EVENTS_PER_GROUP}, with {PAUSE_SECONDS}s pauses.", flush=True)
+    print(f"Sending {TOTAL_EVENTS} events in groups of {CHECKPOINT_SIZE}, with {PAUSE_SECONDS}s pauses.", flush=True)
     print("Connecting to Snowflake and opening the streaming channel...", flush=True)
 
     client = StreamingIngestClient.from_table(
@@ -85,15 +100,13 @@ def main():
             # STEP 3: Append native Python objects. No JSON file or PUT is involved.
             # The SDK buffers/transmits asynchronously. Tokens track source positions
             # within this channel; they are not business-event deduplication keys.
-            append_events(channel, run_id)
+            target_offset = append_events(channel, run_id)
 
-            # STEP 4: Wait once for all source positions to commit.
-            print(f"Waiting for Snowflake to confirm offset {TOTAL_EVENTS} committed...", flush=True)
-            channel.wait_for_commit(
-                lambda token: token is not None and int(token) >= TOTAL_EVENTS,
-                timeout_seconds=60,
-            )
-            print(f"Offset {TOTAL_EVENTS} committed. Query ADV_ORDERS.STREAMING_DEMO.EVENTS in Snowflake.", flush=True)
+            # Every group, including a partial final group, was confirmed above.
+            if target_offset is None:
+                print("No events submitted; no commit checkpoint to wait for.", flush=True)
+            else:
+                print("All submitted events confirmed. Query ADV_ORDERS.STREAMING_DEMO.EVENTS in Snowflake.", flush=True)
         finally:
             channel.close()
     finally:

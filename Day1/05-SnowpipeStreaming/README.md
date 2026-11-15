@@ -35,9 +35,11 @@ is optional reading, not an additional exercise or runnable script.
 - The warehouse, streaming ingestion, and storage incur charges. Use only a
   dedicated training account and resources.
 
-The producer sends ten groups of 100 events, pausing two seconds between groups
-(18 seconds of pauses, plus connection and commit time). These source groups
-are not SDK network batches or transactions. `TOTAL_EVENTS`, `EVENTS_PER_GROUP`,
+The producer sends four groups of 250 events, waiting for commit confirmation for each
+group and then pausing two seconds before the next group
+(6 seconds of pauses, plus connection and commit time). These source groups
+are not SDK network batches or transactions. Waiting observes SDK-managed
+commits; it does not force a commit. A partial final group is also confirmed. `TOTAL_EVENTS`, `CHECKPOINT_SIZE`,
 and `PAUSE_SECONDS` in the producer control the demonstration. If you change
 `TOTAL_EVENTS`, adjust the SQL expected counts accordingly. Keep verification
 queries until after the suspended-warehouse checkpoint.
@@ -80,8 +82,8 @@ memory or use another machine and retry after checking the target.
 
 The producer defaults to SDK log level `warn`, keeping warnings and errors
 visible while hiding routine SDK initialization and shutdown messages. A
-successful run shows the run ID, connection progress, ten progress messages (100 events each),
-and confirmation that offset 1000 committed. Appending alone is not confirmation.
+successful run shows the run ID, connection progress, progress for each 250-event group,
+and commit confirmations at offsets 250, 500, 750, and 1000. Appending alone is not confirmation.
 
 For troubleshooting, enable detailed SDK logs before running the producer:
 

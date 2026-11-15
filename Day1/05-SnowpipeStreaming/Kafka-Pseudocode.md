@@ -6,7 +6,7 @@ The usual integration uses the **Snowflake Connector for Kafka**, running in Kaf
 
 ## Relationship to Lab 05
 
-In `stream_rows.py`, `append_events` generates 1,000 sample events in groups of 100. A custom Kafka application would get its events from Kafka instead.
+In `stream_rows.py`, `append_events` generates 1,000 sample events in groups of 250, waiting for commit confirmation after each group. A custom Kafka application would get its events from Kafka instead.
 
 ```text
 Kafka topic → Kafka consumer → custom application → Streaming SDK → Snowflake
