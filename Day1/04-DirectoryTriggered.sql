@@ -89,7 +89,8 @@ $$;
 CREATE TASK IF NOT EXISTS DIR_EVENTS_LOAD_TASK
     WAREHOUSE = ADV_WH
     WHEN SYSTEM$STREAM_HAS_DATA('DIR_EVENTS_STAGE_STREAM')
-    AS CALL SP_LOAD_DIRECTORY_STAGE_FILES();
+AS
+    CALL SP_LOAD_DIRECTORY_STAGE_FILES();
 
 
 -- Resume only after the stage, stream, table, and procedure exist.
@@ -126,9 +127,11 @@ FROM DIRECTORY(@DIR_EVENTS_STAGE);
 
 SELECT SYSTEM$STREAM_HAS_DATA('DIR_EVENTS_STAGE_STREAM') AS has_pending_file_changes;
 
-SELECT * FROM DIR_FILE_EVENTS ORDER BY observed_at DESC;
+SELECT *
+FROM DIR_FILE_EVENTS ORDER BY observed_at DESC;
 
-SELECT COUNT(*) AS directory_branch_rows FROM DIR_EVENTS_RAW;
+SELECT COUNT(*) AS directory_branch_rows
+FROM DIR_EVENTS_RAW;
 
 -- Check the Task History (in the last hour)
 SELECT
@@ -148,6 +151,9 @@ FROM TABLE(
     )
 )
 ORDER BY scheduled_time DESC;
+
+-- After processing the data, Snowflake checks whether there is more work.
+-- If there isn’t, it records one skipped attempt and goes back to waiting.
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 7: After verification, suspend the demonstration task.
