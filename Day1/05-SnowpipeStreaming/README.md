@@ -15,6 +15,10 @@ The SDK can use internal buffering and files.
 A channel tracks source positions; it is not a SQL `STREAM` object. Table mode
 uses a default streaming pipe, separate from `ORDERS_PIPE`.
 
+For an optional classroom illustration of a real event source, see
+[Kafka integration pseudocode](Kafka-Pseudocode.md). This is discussion-only,
+not an additional exercise or runnable script.
+
 ## Before class
 
 - Use local Python 3.12 and install the dependencies below. The pinned SDK
