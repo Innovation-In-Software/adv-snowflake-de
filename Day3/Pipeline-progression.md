@@ -62,19 +62,14 @@ Two student worksheets -> concurrent queries -> inspect queueing
 
 Prepare RECOVERY_COPY before the experiments. The original business pipeline is untouched. Keep result-cache, warehouse-cache and sizing observations separate. Local UNDROP demonstrates recovery of this disposable copy, not cross-region readiness.
 
-## Lab 18 - Capstone and shutdown
+## Lab 18 - AWS external function
 
 ```text
-Bronze -> Silver -> Dynamic Gold -> governed consumers
-           |             |                 |
-        state checks   freshness         role tests
-Performance sandbox -> measured evidence -> defended design
-
-Shutdown -> suspend tasks / pipe / DTs / MV / warehouses
-         -> remove optional maintenance if enabled
+Snowflake SQL -> external function -> API integration
+              -> AWS API Gateway -> Lambda -> risk result
 ```
 
-No new table. Resume and refresh the Dynamic Tables stopped on Day 2, then verify freshness before reconciling business state, consumer access and performance evidence. The stop script preserves objects and evidence while stopping services; optional services are stopped only if created. A diagram shows intended structure, not proof that every branch ran successfully.
+Use the Snowflake-hosted notebook and AWS console to create and test the connection. Clean up the Snowflake function and integration and the AWS resources after the lab. Run `99-CourseStop.sql` separately to stop the course pipeline and maintenance services.
 
 ## Table-first teaching sequence
 

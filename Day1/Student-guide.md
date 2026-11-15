@@ -19,6 +19,8 @@ Run SetUp/00, then 01 → 02 → 02A → 02B → 03 → 04 → 05 → 06. Lab 01
 
 After Lab 02, [Lab 02A](02A-Python-Snowpipe.md) uploads four duplicate event deliveries to the existing stage and submits the new file to `ORDERS_PIPE` through the Snowpipe REST API. This raises core Bronze and pending stream counts from 8 to 12. [Lab 02B](02B-DirectoryTriggered.md) uses a separate stage and target for a directory-table stream and triggered task. Suspend the triggered task after 02B. Follow the planned-sequence counts in the 02A checkpoint table.
 
+Optional instructor demonstration: [Snowpipe Streaming](../Demos/SnowpipeStreaming/README.md) contrasts file ingestion with appending records through a named channel. It uses a separate schema and warehouse; complete its cleanup afterward.
+
 Continue with 03 → 04 → 05 → 06. Run 05 before 06 because acceptance expects 14 deliveries; 06 adds one replay delivery, bringing the total to 15. Use Course-runbook.md for the revised proposed day schedule, including Snowpark and deployment time. Teaching durations have not yet been timed with a class.
 
 ## Lab 03 — develop the queries before making them reusable

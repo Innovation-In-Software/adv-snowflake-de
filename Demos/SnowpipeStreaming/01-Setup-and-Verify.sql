@@ -1,19 +1,30 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
-1) Prepare an isolated target for an instructor Snowpipe Streaming rehearsal
+1) Prepare an isolated target for an instructor Snowpipe Streaming demo
 2) Send three rows from local Python without creating or uploading files
-3) Inspect the committed rows before deciding whether to add this to the course
+3) Inspect committed rows and clean up the demo
 ----------------------------------------------------------------------------------*/
 
 -- Instructor demo only; this does not change the Day 1 pipeline or its counts.
+-- Use a dedicated warehouse so this independent demo does not use ADV_WH.
+-- CREATE fails if the name exists: verify ownership before using or dropping it.
+USE ROLE ACCOUNTADMIN;
+CREATE WAREHOUSE STREAMING_DEMO_WH
+    WAREHOUSE_SIZE = 'XSMALL'
+    AUTO_SUSPEND = 60
+    AUTO_RESUME = TRUE
+    INITIALLY_SUSPENDED = TRUE;
+GRANT USAGE ON WAREHOUSE STREAMING_DEMO_WH TO ROLE ADV_LAB;
+
 USE ROLE ADV_LAB;
-USE WAREHOUSE ADV_WH;
+USE WAREHOUSE STREAMING_DEMO_WH;
 USE DATABASE ADV_ORDERS;
 
 -- STEP 1: Create a separate schema and an append-only demonstration target.
-CREATE SCHEMA IF NOT EXISTS STREAMING_DEMO;
+-- If the schema already exists, stop and verify ownership before proceeding.
+CREATE SCHEMA STREAMING_DEMO;
 USE SCHEMA STREAMING_DEMO;
-CREATE TABLE IF NOT EXISTS EVENTS
+CREATE TABLE EVENTS
 (
     run_id STRING,
     event_number NUMBER,
@@ -39,5 +50,17 @@ GROUP BY run_id;
 -- STEP 4: Inspect the streaming pipe created for this target.
 SHOW PIPES IN SCHEMA ADV_ORDERS.STREAMING_DEMO;
 
--- Optional cleanup AFTER the Python client exits and results are inspected:
--- DROP SCHEMA ADV_ORDERS.STREAMING_DEMO;
+-- STEP 5: After the client exits and results are inspected, remove only the
+-- resources created by this demo. Dropping the schema also drops its pipe.
+USE SCHEMA OPS;
+DROP SCHEMA STREAMING_DEMO;
+SHOW SCHEMAS LIKE 'STREAMING_DEMO' IN DATABASE ADV_ORDERS;
+-- CHECKPOINT: no row.
+
+USE WAREHOUSE ADV_WH;
+USE ROLE ACCOUNTADMIN;
+DROP WAREHOUSE STREAMING_DEMO_WH;
+
+SHOW WAREHOUSES LIKE 'STREAMING_DEMO_WH';
+-- CHECKPOINT: no row.
+USE ROLE ADV_LAB;
