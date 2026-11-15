@@ -29,16 +29,18 @@ is optional reading, not an additional exercise or runnable script.
   user, and the user must have the `ADV_LAB` role. Relative key paths are
   resolved from the repository root. Existing environment variables take
   precedence over `.env`; keep credentials and private keys out of Git.
-- The role needs permission to create a schema in `ADV_ORDERS`. `ACCOUNTADMIN`
-  creates the dedicated warehouse. The local machine needs network access to
+- The role needs permission to create a schema in `ADV_ORDERS` and operate
+  the existing `ADV_WH`, as granted by course setup. The local machine needs network access to
   Snowflake's account and streaming endpoints and storage destinations.
 - The warehouse, streaming ingestion, and storage incur charges. Use only a
   dedicated training account and resources.
 
 ## Exercise
 
-1. In `05-Setup-and-Verify.sql`, execute the warehouse setup and Step 1.
+1. In `05-Setup-and-Verify.sql`, execute the session context and Step 1.
    The names must be unused; if creation fails, stop and check ownership.
+   In Step 2, suspend `ADV_WH` if it is running and verify `SUSPENDED` with
+   `SHOW WAREHOUSES`. Finish Lab 04's task suspension and keep other workloads idle.
 2. From the repository root, run:
 
    ```powershell
@@ -47,11 +49,14 @@ is optional reading, not an additional exercise or runnable script.
 
 3. Note the printed run ID. `append_row` is not a commit; wait for the
    message that offset 3 committed. The program closes its channel and client.
-4. Run Step 3 in SQL. For that run ID, expect event numbers 1, 2, and 3,
+4. In Step 3, first run only `SHOW WAREHOUSES`: expect `ADV_WH` still suspended
+   with an unchanged `resumed_on`. This metadata command does not resume it.
+   Then run the verification queries, which use `ADV_WH` and trigger auto-resume.
+   For that run ID, expect event numbers 1, 2, and 3,
    three rows and three distinct event numbers. Each `PAYLOAD` is a JSON object.
    Step 4 shows the default streaming pipe.
-5. After inspecting the results, run Step 5 to drop the lab schema and
-   dedicated warehouse. If stopping early, remove only resources this lab
+5. After inspecting the results, run Step 5 to drop the lab schema.
+   Retain `ADV_WH` for the remaining labs. If stopping early, remove only resources this lab
    actually created; do not drop an existing resource with the same name.
 
 Each invocation creates a new run ID and channel and intentionally adds three
@@ -90,7 +95,8 @@ Each producer execution still adds a new set of three rows.
 
 Live QA with SDK 1.9.3 committed all three rows, returned three native JSON
 objects, displayed the managed `EVENTS-STREAMING` pipe, and removed the QA
-schema and warehouse. The producer took about 24 seconds on that run. Earlier
+schema and the then-used dedicated warehouse. The revised suspended-`ADV_WH`
+checkpoints still require a live rehearsal. The producer took about 24 seconds on that run. Earlier
 attempts were blocked by local memory pressure; rehearse on the presentation
 machine and network before class.
 

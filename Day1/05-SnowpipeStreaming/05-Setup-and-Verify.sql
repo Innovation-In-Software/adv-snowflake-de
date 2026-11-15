@@ -6,18 +6,10 @@
 ----------------------------------------------------------------------------------*/
 
 -- Lab 05 does not change the Day 1 pipeline or its counts.
--- Use a dedicated warehouse so this independent demo does not use ADV_WH.
+-- Streaming ingestion uses Snowflake-managed compute; ADV_WH is for queries only.
 -- CREATE fails if the name exists: verify ownership before using or dropping it.
-USE ROLE ACCOUNTADMIN;
-CREATE WAREHOUSE STREAMING_DEMO_WH
-    WAREHOUSE_SIZE = 'XSMALL'
-    AUTO_SUSPEND = 60
-    AUTO_RESUME = TRUE
-    INITIALLY_SUSPENDED = TRUE;
-GRANT USAGE ON WAREHOUSE STREAMING_DEMO_WH TO ROLE ADV_LAB;
-
 USE ROLE ADV_LAB;
-USE WAREHOUSE STREAMING_DEMO_WH;
+USE WAREHOUSE ADV_WH;
 USE DATABASE ADV_ORDERS;
 
 -- STEP 1: Create a separate schema and an append-only demonstration target.
@@ -31,14 +23,37 @@ CREATE TABLE EVENTS
     payload VARIANT
 );
 
--- STEP 2: PAUSE HERE. Run Day1/05-SnowpipeStreaming/stream_rows.py with local Python 3.12.
+-- STEP 2: Suspend query compute before running the Python producer.
+-- Finish Lab 04's task suspension first. Keep other worksheets, notebook sessions,
+-- and data previews idle: they could independently resume the shared ADV_WH.
+SHOW WAREHOUSES LIKE 'ADV_WH';
+-- If state is already SUSPENDED, skip the following ALTER statement.
+ALTER WAREHOUSE ADV_WH SUSPEND;
+SHOW WAREHOUSES LIKE 'ADV_WH';
+-- CHECKPOINT: state = SUSPENDED. Note resumed_on for comparison after ingestion.
+-- SHOW WAREHOUSES does not require or resume warehouse compute.
+
+-- PAUSE HERE. Run Day1/05-SnowpipeStreaming/stream_rows.py with local Python 3.12.
 -- The SDK table-mode client uses an automatically created streaming pipe.
 -- No named stage, file format, PUT command, or SQL CDC stream is needed.
 
--- STEP 3: Rerun these queries after the producer confirms offset 3 committed.
+-- STEP 3: After Python confirms offset 3 committed, run ONLY this SHOW first.
+SHOW WAREHOUSES LIKE 'ADV_WH';
+-- CHECKPOINT: state remains SUSPENDED and resumed_on has not changed.
+-- This demonstrates ingestion without resuming ADV_WH. If resumed_on changed,
+-- another workload may have used it, even if it has since auto-suspended.
+
+-- Now query the ingested rows. ADV_WH has AUTO_RESUME enabled by course setup.
+-- Disable persisted-result reuse for this demonstration so the row query uses compute.
+ALTER SESSION SET USE_CACHED_RESULT = FALSE;
 SELECT run_id, event_number, payload
 FROM EVENTS
 ORDER BY run_id, event_number;
+
+SHOW WAREHOUSES LIKE 'ADV_WH';
+-- CHECKPOINT: resumed_on advanced for the verification query. State should be
+-- STARTED if checked promptly; auto-suspend can return it to SUSPENDED later.
+ALTER SESSION UNSET USE_CACHED_RESULT;
 
 SELECT run_id, COUNT(*) AS rows_in_run,
        COUNT(DISTINCT event_number) AS distinct_event_numbers
@@ -57,10 +72,4 @@ DROP SCHEMA STREAMING_DEMO;
 SHOW SCHEMAS LIKE 'STREAMING_DEMO' IN DATABASE ADV_ORDERS;
 -- CHECKPOINT: no row.
 
-USE WAREHOUSE ADV_WH;
-USE ROLE ACCOUNTADMIN;
-DROP WAREHOUSE STREAMING_DEMO_WH;
-
-SHOW WAREHOUSES LIKE 'STREAMING_DEMO_WH';
--- CHECKPOINT: no row.
-USE ROLE ADV_LAB;
+-- Retain ADV_WH for the remaining course labs; no dedicated warehouse was created.
