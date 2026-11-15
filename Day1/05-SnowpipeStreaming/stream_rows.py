@@ -7,6 +7,10 @@ import os
 import uuid
 
 from dotenv import load_dotenv
+
+# Set the SDK log level before importing its native runtime. Keep warnings and
+# errors visible; set SS_LOG_LEVEL=info in PowerShell for detailed diagnostics.
+os.environ.setdefault("SS_LOG_LEVEL", "warn")
 from snowflake.ingest.streaming import StreamingIngestClient
 
 
@@ -40,6 +44,7 @@ def main():
     # Each invocation deliberately has a new channel/run ID and adds three rows.
     run_id = uuid.uuid4().hex
     print(f"Run ID: {run_id}", flush=True)
+    print("Connecting to Snowflake and opening the streaming channel...", flush=True)
 
     client = StreamingIngestClient.from_table(
         client_name="advanced-class-streaming-demo",
@@ -67,6 +72,7 @@ def main():
                 print(f"Appended event {number}; not yet confirmed committed.")
 
             # STEP 4: Wait once for all three source positions to commit.
+            print("Waiting for Snowflake to confirm offset 3 committed...", flush=True)
             channel.wait_for_commit(
                 lambda token: token is not None and int(token) >= 3,
                 timeout_seconds=60,

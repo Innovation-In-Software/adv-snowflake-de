@@ -64,6 +64,28 @@ before retrying: a timeout does not prove that no rows arrived. A memory
 throttling error can mean the local machine is under memory pressure; free
 memory or use another machine and retry after checking the target.
 
+## Console output
+
+The producer defaults to SDK log level `warn`, keeping warnings and errors
+visible while hiding routine SDK initialization and shutdown messages. A
+successful run shows the run ID, connection progress, three appended events,
+and confirmation that offset 3 committed. Appending alone is not confirmation.
+
+For troubleshooting, enable detailed SDK logs before running the producer:
+
+```powershell
+$env:SS_LOG_LEVEL = 'info'
+```
+
+Return to concise output with:
+
+```powershell
+$env:SS_LOG_LEVEL = 'warn'
+```
+
+These settings apply to Python processes launched from that PowerShell session.
+Each producer execution still adds a new set of three rows.
+
 ## Rehearsal status
 
 Live QA with SDK 1.9.3 committed all three rows, returned three native JSON
