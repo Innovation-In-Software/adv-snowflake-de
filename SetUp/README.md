@@ -82,7 +82,7 @@ Copy-Item .\.env.example .\.env
 notepad .\.env
 ```
 
-If `.env` already exists, open it without copying over it. Fill in these three values for your assigned Snowflake training account:
+If `.env` already exists, open it without copying over it. Fill in these three values for your own Snowflake training account:
 
 ```dotenv
 SNOWFLAKE_ACCOUNT=organization-account
@@ -90,10 +90,25 @@ SNOWFLAKE_USER=your_snowflake_username
 SNOWFLAKE_PASSWORD=your_snowflake_password
 ```
 
-Use the account identifier supplied by the instructor, not the browser URL. Leave the other settings unchanged. Save and close Notepad. Keep `.env` private; do not commit or share it.
+Use your own Snowflake account identifier in `organization-account` format, not
+the browser URL. You can use the `account_id` value displayed by
+`SetUp/00-Environment.sql` after running it in your account. Enter your own
+Snowflake username and password. Keep the remaining Snowflake settings at their
+classroom defaults; the setup script creates those lab objects in your account.
 
-The AWS placeholders are for the optional AWS connection check and local
-cleanup in Lab 21. Leave them unchanged until you are ready to use AWS. Never
+In the same `.env` file, replace both AWS placeholders with access credentials
+for your own AWS account. These are needed for the AWS connectivity test in section 6:
+
+```dotenv
+AWS_ACCESS_KEY_ID=your_aws_access_key_id
+AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+```
+
+If you were issued temporary credentials, also uncomment and fill in
+`AWS_SESSION_TOKEN` with the matching session token. If you do not have AWS
+credentials, ask the instructor before attempting the AWS test.
+
+Save and close Notepad. Keep `.env` private; do not commit or share it. Never
 put real credentials in `.env.example`.
 
 ## 5. Prepare Snowflake
@@ -122,11 +137,9 @@ Back in PowerShell, run:
 
 Expect **`Snowflake connection confirmed.`** and role **`ADV_LAB`**. If authentication fails, ask the instructor; this setup script requires password authentication permitted by the training account.
 
-### Optional: check AWS connectivity
+### Check AWS connectivity
 
-When ready for Lab 21, replace both AWS placeholders in the local `.env` with
-credentials for your existing AWS account. If using temporary credentials, also
-set `AWS_SESSION_TOKEN`. Keep all credentials private. Run:
+Using the AWS credentials entered in section 4, run:
 
 ```powershell
 & "$HOME\.venvs\adv-snowflake-de\Scripts\python.exe" .\SetUp\test_aws_connection.py
@@ -134,7 +147,8 @@ set `AWS_SESSION_TOKEN`. Keep all credentials private. Run:
 
 Expect **`AWS connection confirmed.`** and check that the displayed account and
 identity are the ones you intend to use. If both placeholders are unchanged, the
-check is skipped; incomplete or invalid credentials cause an error. Existing
+script skips the check; this does not confirm AWS connectivity. Return to section
+4 or ask the instructor. Incomplete or invalid credentials cause an error. Existing
 environment variables take precedence over `.env`. The check uses AWS STS and
 does not verify Lab 21 permissions for Lambda, API Gateway, IAM or CloudWatch.
 
