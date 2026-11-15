@@ -15,7 +15,9 @@ USE DATABASE ADV_ORDERS;
 -- STEP 1: Create a separate schema and an append-only demonstration target.
 -- If the schema already exists, stop and verify ownership before proceeding.
 CREATE SCHEMA STREAMING_DEMO;
+
 USE SCHEMA STREAMING_DEMO;
+
 CREATE TABLE EVENTS
 (
     run_id STRING,
@@ -28,6 +30,7 @@ CREATE TABLE EVENTS
 -- and data previews idle: they could independently resume the shared ADV_WH.
 SHOW WAREHOUSES LIKE 'ADV_WH';
 -- If state is already SUSPENDED, skip the following ALTER statement.
+
 ALTER WAREHOUSE ADV_WH SUSPEND;
 SHOW WAREHOUSES LIKE 'ADV_WH';
 -- CHECKPOINT: state = SUSPENDED. Note resumed_on for comparison after ingestion.
@@ -46,6 +49,7 @@ SHOW WAREHOUSES LIKE 'ADV_WH';
 -- Now query the ingested rows. ADV_WH has AUTO_RESUME enabled by course setup.
 -- Disable persisted-result reuse for this demonstration so the row query uses compute.
 ALTER SESSION SET USE_CACHED_RESULT = FALSE;
+
 SELECT run_id, event_number, payload
 FROM EVENTS
 ORDER BY run_id, event_number;
@@ -53,9 +57,11 @@ ORDER BY run_id, event_number;
 SHOW WAREHOUSES LIKE 'ADV_WH';
 -- CHECKPOINT: resumed_on advanced for the verification query. State should be
 -- STARTED if checked promptly; auto-suspend can return it to SUSPENDED later.
+     
 ALTER SESSION UNSET USE_CACHED_RESULT;
 
-SELECT run_id, COUNT(*) AS rows_in_run,
+SELECT run_id,
+       COUNT(*)                     AS rows_in_run,
        COUNT(DISTINCT event_number) AS distinct_event_numbers
 FROM EVENTS
 GROUP BY run_id;
@@ -68,7 +74,9 @@ SHOW PIPES IN SCHEMA ADV_ORDERS.STREAMING_DEMO;
 -- STEP 5: After the client exits and results are inspected, remove only the
 -- resources created by this demo. Dropping the schema also drops its pipe.
 USE SCHEMA OPS;
+
 DROP SCHEMA STREAMING_DEMO;
+
 SHOW SCHEMAS LIKE 'STREAMING_DEMO' IN DATABASE ADV_ORDERS;
 -- CHECKPOINT: no row.
 
