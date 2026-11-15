@@ -17,12 +17,9 @@ USE SCHEMA BRONZE;
 -- ──────────────────────────────────────────────────────────────────────────────
 -- STEP 1: Create the directory-enabled stage using Lab 01's JSON/GZIP format.
 -- ──────────────────────────────────────────────────────────────────────────────
-CREATE STAGE IF NOT EXISTS DIR_EVENTS_STAGE
-    DIRECTORY = (ENABLE = TRUE) -- this creates a directory table that we can query
+CREATE OR REPLACE STAGE DIR_EVENTS_STAGE
+    DIRECTORY = (ENABLE = TRUE)
     FILE_FORMAT = ADV_ORDERS.BRONZE.EVENTS_JSON;
-
--- Apply the shared format even if the stage exists from an earlier rehearsal.
-ALTER STAGE DIR_EVENTS_STAGE SET FILE_FORMAT = ADV_ORDERS.BRONZE.EVENTS_JSON;
 
 SELECT *
 FROM DIRECTORY(@DIR_EVENTS_STAGE);
