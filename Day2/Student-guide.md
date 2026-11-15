@@ -28,7 +28,7 @@ The core policy, masking and scheduled data-quality branches require an appropri
 
 `Snowpark-OrderTransform.py` is the reference source for Lab 10. `Snowpark-Pipeline.ipynb` is an alternative, unvalidated notebook-consumer branch, not an additional required lab. Never run two consumers against the same stream.
 
-For an optional local Streamlit run, install `python -m pip install -r Day2\requirements-local.txt`, then run `python -m streamlit run Day2\14-Streamlit-Gold.py -- --local` from the repository root. The root `.env` must provide `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER`, and `SNOWFLAKE_PRIVATE_KEY_FILE` (and `SNOWFLAKE_PRIVATE_KEY_FILE_PWD` if the key is encrypted). The user must have `ADV_ANALYST_US`; the app connects with that role, disables secondary roles, and uses `ADV_WH` and `ADV_ORDERS.CONSUMER`. This local path is separate from the unrehearsed hosted UI path.
+For an optional local Streamlit run, complete [student VM setup](../SetUp/README.md), then run `& "$HOME\.venvs\adv-snowflake-de\Scripts\python.exe" -m streamlit run .\Day2\14-Streamlit-Gold.py -- --local` from the repository root in PowerShell. The root `.env` must provide `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER`, and `SNOWFLAKE_PRIVATE_KEY_FILE` (and `SNOWFLAKE_PRIVATE_KEY_FILE_PWD` if the key is encrypted). The user must have `ADV_ANALYST_US`; the app connects with that role, disables secondary roles, and uses `ADV_WH` and `ADV_ORDERS.CONSUMER`. This local path is separate from the unrehearsed hosted UI path.
 
 ## Optional branches
 

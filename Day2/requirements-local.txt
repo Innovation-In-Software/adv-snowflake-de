@@ -1,3 +1,0 @@
--r "..\SetUp\requirements.txt"
-snowflake-snowpark-python[pandas]
-streamlit

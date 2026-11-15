@@ -6,11 +6,11 @@ Run after Lab 02 and before Lab 07. Reuse `EVENTS_STAGE`, `ORDERS_PIPE`, and `EV
 
 1. Pull the latest repository locally and in the Snowflake workspace. Complete Labs 01-02 and the local key-pair setup. Use the same training user in `.env` and Snowsight; use the `organization-account` account identifier.
 2. Run `03-Snowpipe-Setup.sql` in Snowsight. This sets your training user's default role to `ADV_LAB`; REST requests use that default role, not `SNOWFLAKE_ROLE` or a connector session role. No new stage or target is created.
-3. From the local repository root:
+3. From the local repository root, use the Python environment prepared in
+   [student VM setup](../SetUp/README.md):
 
 ```powershell
-python -m pip install -r SetUp/requirements.txt
-python Day1/03-PythonSnowpipe.py
+& "$HOME\.venvs\adv-snowflake-de\Scripts\python.exe" .\Day1\03-PythonSnowpipe.py
 ```
 
 The script keeps only `Day1/rest_api_replay.json` (one JSON object per line) beside the Python script and prints its full path. Open it in your editor to inspect the four events. Each rerun regenerates this file; Git ignores it. `PUT AUTO_COMPRESS=TRUE` compresses it during upload, producing `rest_api_replay.json.gz` on the stage without keeping a second lab output locally.

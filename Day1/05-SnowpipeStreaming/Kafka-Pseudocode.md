@@ -1,10 +1,10 @@
-# Kafka to Snowpipe Streaming: teaching pseudocode
+# Kafka to Snowpipe Streaming: concepts and pseudocode
 
-**Discussion only — not runnable Python.** The methods below illustrate responsibilities, not exact Kafka or Snowflake SDK APIs. No Kafka installation is required for Lab 05.
+**Conceptual example — not runnable Python.** The methods below illustrate responsibilities, not exact Kafka or Snowflake SDK APIs. No Kafka installation is required for Lab 05.
 
-Normally, use the **Snowflake Connector for Kafka**, running in Kafka Connect. It provides the integration instead of requiring students to build a consumer and recovery logic.
+The usual integration uses the **Snowflake Connector for Kafka**, running in Kafka Connect. It manages ingestion and recovery without requiring a custom consumer application. The pseudocode below illustrates the responsibilities involved in a custom implementation.
 
-## Connect this to the lab
+## Relationship to Lab 05
 
 In `stream_rows.py`, the loop `for number in range(1, 4)` generates three sample events. A custom Kafka application would get its events from Kafka instead.
 
@@ -66,7 +66,7 @@ while running_and_partition_still_owned:
 
 Here, `lambda` is a Python anonymous function that checks committed progress. It is **not AWS Lambda** and does not control batching. The Streaming SDK handles buffering and transmission.
 
-## Explain the recovery boundary
+## Commit progress and recovery
 
 If the application stops after Snowflake commits but before Kafka progress is saved, it can recover using the stable channel's committed offset. Reading a Kafka message alone does not prove that Snowflake has stored it.
 
@@ -74,8 +74,8 @@ This is not a complete production design. Production code must handle partition 
 
 Offset tracking does not remove duplicate business events published at different Kafka offsets. The lab itself deliberately adds another three rows on each run and does not implement restart recovery.
 
-## Suggested classroom explanation
+## From sample events to a continuous stream
 
-> Our loop generates three events. In a Kafka application, a consumer supplies the events and their partition offsets. Snowpipe Streaming appends them to Snowflake, and we wait for committed progress before acknowledging consumption. In production, we normally use the Snowflake Connector for Kafka to manage this integration.
+The lab loop generates three events and then exits. In a Kafka application, a consumer continuously supplies events and their partition offsets. Snowpipe Streaming appends the events to Snowflake, and the application waits for committed progress before acknowledging consumption. The Snowflake Connector for Kafka manages this integration in a typical production deployment.
 
 References: [Snowflake Connector for Kafka](https://docs.snowflake.com/en/user-guide/kafka-connector/index) and [how the connector works](https://docs.snowflake.com/en/user-guide/kafka-connector/how-the-connector-works).

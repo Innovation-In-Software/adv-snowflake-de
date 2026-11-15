@@ -3,3 +3,7 @@ snowflake-connector-python>=3.12
 python-dotenv>=1.0
 PyJWT>=2.8
 requests>=2.31
+snowpipe-streaming==1.9.3
+snowflake-snowpark-python[pandas]
+streamlit
+boto3>=1.35

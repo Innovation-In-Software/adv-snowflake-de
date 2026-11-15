@@ -15,13 +15,14 @@ The SDK can use internal buffering and files.
 A channel tracks source positions; it is not a SQL `STREAM` object. Table mode
 uses a default streaming pipe, separate from `ORDERS_PIPE`.
 
-For an optional classroom illustration of a real event source, see
-[Kafka integration pseudocode](Kafka-Pseudocode.md). This is discussion-only,
-not an additional exercise or runnable script.
+For additional background on integrating a real event source, see
+[Kafka integration pseudocode](Kafka-Pseudocode.md). This conceptual example
+is optional reading, not an additional exercise or runnable script.
 
 ## Before class
 
-- Use local Python 3.12 and install the dependencies below. The pinned SDK
+- Complete [student VM setup](../../SetUp/README.md) to install the local
+  course dependencies. The pinned SDK
   version is intentional; rehearse again before changing it.
 - The repository-root `.env` must contain `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER`,
   and `SNOWFLAKE_PRIVATE_KEY_FILE`. The public key must be registered for that
@@ -34,13 +35,6 @@ not an additional exercise or runnable script.
 - The warehouse, streaming ingestion, and storage incur charges. Use only a
   dedicated training account and resources.
 
-From the repository root, install once:
-
-```powershell
-python -m pip install -r Day1\05-SnowpipeStreaming\requirements.txt
-python -m pip show snowpipe-streaming
-```
-
 ## Exercise
 
 1. In `05-Setup-and-Verify.sql`, execute the warehouse setup and Step 1.
@@ -48,7 +42,7 @@ python -m pip show snowpipe-streaming
 2. From the repository root, run:
 
    ```powershell
-   python Day1\05-SnowpipeStreaming\stream_rows.py
+   & "$HOME\.venvs\adv-snowflake-de\Scripts\python.exe" .\Day1\05-SnowpipeStreaming\stream_rows.py
    ```
 
 3. Note the printed run ID. `append_row` is not a commit; wait for the

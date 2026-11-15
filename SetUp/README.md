@@ -62,14 +62,16 @@ py -3.12 -m venv "$HOME\.venvs\adv-snowflake-de"
 
 The first command normally finishes silently. Expect **Python 3.12.x** from the second. No environment activation is needed; use the full Python command shown below.
 
-Install the connection and Snowpipe Streaming packages:
+Install all local course packages, including the optional local Streamlit app
+and AWS cleanup tool:
 
 ```powershell
-& "$HOME\.venvs\adv-snowflake-de\Scripts\python.exe" -m pip install -r .\SetUp\requirements.txt -r .\Day1\05-SnowpipeStreaming\requirements.txt
+& "$HOME\.venvs\adv-snowflake-de\Scripts\python.exe" -m pip install -r .\SetUp\requirements.txt
 & "$HOME\.venvs\adv-snowflake-de\Scripts\python.exe" -m pip check
+& "$HOME\.venvs\adv-snowflake-de\Scripts\python.exe" -c "import snowflake.connector, snowflake.snowpark, snowflake.ingest.streaming, cryptography, dotenv, jwt, requests, pandas, streamlit, boto3; print('Local course imports OK')"
 ```
 
-Wait for installation to finish before running the check. Expect **`No broken requirements found.`** A pip update notice does not require action. If installation or the check fails, ask the instructor before continuing.
+Wait for installation to finish before running the checks. Expect **`No broken requirements found.`** and **`Local course imports OK`**. A pip update notice does not require action. If installation or either check fails, ask the instructor before continuing. These packages are for the local VM; Snowflake-hosted notebooks and apps manage their dependencies separately.
 
 ## 4. Enter your connection settings
 
@@ -137,6 +139,10 @@ git pull --ff-only
 ```
 
 If Git reports a conflict or that local changes would be overwritten, stop and ask the instructor. The current setup scripts explicitly configure the connector's session behavior to avoid its default-setting warning; students do not need to edit Python code.
+
+If you set up the environment before these dependencies were consolidated, rerun
+the install and checks in **Prepare Python** after pulling the update; you do
+not need to recreate the environment.
 
 ## Before leaving class
 
