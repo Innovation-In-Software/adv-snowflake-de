@@ -24,7 +24,7 @@ def optional(call, **kwargs):
 
 
 def matches_invocation_policy(policy, resource):
-    """Ignore cosmetic IAM formatting, but require only the expected permission."""
+    """Allow only the lab's root and optional FX invocation permissions."""
     statements = policy.get('Statement', [])
 
     if isinstance(statements, dict):
@@ -33,6 +33,7 @@ def matches_invocation_policy(policy, resource):
     if not statements:
         return False
 
+    allowed_resources = set()
     for statement in statements:
         actions = statement.get('Action', [])
         resources = statement.get('Resource', [])
@@ -45,11 +46,14 @@ def matches_invocation_policy(policy, resource):
             
         if (statement.get('Effect') != 'Allow'
                 or actions != ['execute-api:Invoke']
-                or resources != [resource]
+                or not resources
+                or any(r not in {resource, resource + 'fx'} for r in resources)
                 or set(statement) - {'Sid', 'Effect', 'Action', 'Resource'}):
             return False
 
-    return True
+        allowed_resources.update(resources)
+
+    return resource in allowed_resources
 
 
 def build_plan(session, args):
@@ -150,7 +154,7 @@ def build_plan(session, args):
                 expected = f'arn:aws:execute-api:{args.region}:{account}:{args.api_id}/demo/POST/'
 
                 if not matches_invocation_policy(policy, expected):
-                    print('Expected invocation resource:', expected)
+                    print('Allowed invocation resources:', expected, 'and', expected + 'fx')
                     print('Actual invocation policy:', json.dumps(policy, indent=2))
                     raise ValueError('Invocation policy differs from this lab endpoint; review manually.')
 
