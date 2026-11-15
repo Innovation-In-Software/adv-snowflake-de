@@ -128,6 +128,7 @@ def main() -> None:
             password=password,
             role="ACCOUNTADMIN",
             login_timeout=30,
+            enable_server_session_keep_alive_auto_detection=True,
         )
         
         with connection.cursor() as cursor:
@@ -156,6 +157,7 @@ def main() -> None:
             database=os.getenv("SNOWFLAKE_DATABASE", "ADV_ORDERS").strip(),
             schema=os.getenv("SNOWFLAKE_SCHEMA", "BRONZE").strip(),
             login_timeout=30,
+            enable_server_session_keep_alive_auto_detection=True,
         )
         with connection.cursor() as cursor:
             row = cursor.execute("SELECT CURRENT_USER(), CURRENT_ROLE(), CURRENT_ACCOUNT()").fetchone()
