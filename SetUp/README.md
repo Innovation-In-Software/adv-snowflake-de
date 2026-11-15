@@ -92,6 +92,10 @@ SNOWFLAKE_PASSWORD=your_snowflake_password
 
 Use the account identifier supplied by the instructor, not the browser URL. Leave the other settings unchanged. Save and close Notepad. Keep `.env` private; do not commit or share it.
 
+The AWS placeholders are for the optional AWS connection check and local
+cleanup in Lab 21. Leave them unchanged until you are ready to use AWS. Never
+put real credentials in `.env.example`.
+
 ## 5. Prepare Snowflake
 
 **Skip this step if setup has already been completed in your training account. Rerunning the script resets the lab database.**
@@ -117,6 +121,22 @@ Back in PowerShell, run:
 ```
 
 Expect **`Snowflake connection confirmed.`** and role **`ADV_LAB`**. If authentication fails, ask the instructor; this setup script requires password authentication permitted by the training account.
+
+### Optional: check AWS connectivity
+
+When ready for Lab 21, replace both AWS placeholders in the local `.env` with
+credentials for your existing AWS account. If using temporary credentials, also
+set `AWS_SESSION_TOKEN`. Keep all credentials private. Run:
+
+```powershell
+& "$HOME\.venvs\adv-snowflake-de\Scripts\python.exe" .\SetUp\test_aws_connection.py
+```
+
+Expect **`AWS connection confirmed.`** and check that the displayed account and
+identity are the ones you intend to use. If both placeholders are unchanged, the
+check is skipped; incomplete or invalid credentials cause an error. Existing
+environment variables take precedence over `.env`. The check uses AWS STS and
+does not verify Lab 21 permissions for Lambda, API Gateway, IAM or CloudWatch.
 
 ## 7. Create and test your key pair
 
