@@ -1,7 +1,7 @@
 /*----------------Snowflake Advanced 3-day class Lab:-------------------------------
 -- Copyright © 2026 Innovation In Software Corporation. All rights reserved.
 1) Prepare an isolated target for the Snowpipe Streaming lab
-2) Send three rows from local Python without creating or uploading files
+2) Send 1,000 rows in paced groups from local Python without creating or uploading files
 3) Inspect committed rows and clean up the demo
 ----------------------------------------------------------------------------------*/
 
@@ -40,7 +40,7 @@ SHOW WAREHOUSES LIKE 'ADV_WH';
 -- The SDK table-mode client uses an automatically created streaming pipe.
 -- No named stage, file format, PUT command, or SQL CDC stream is needed.
 
--- STEP 3: After Python confirms offset 3 committed, run ONLY this SHOW first.
+-- STEP 3: After Python confirms offset 1000 committed, run ONLY this SHOW first.
 SHOW WAREHOUSES LIKE 'ADV_WH';
 -- CHECKPOINT: state remains SUSPENDED and resumed_on has not changed.
 -- This demonstrates ingestion without resuming ADV_WH. If resumed_on changed,
@@ -52,7 +52,8 @@ ALTER SESSION SET USE_CACHED_RESULT = FALSE;
 
 SELECT run_id, event_number, payload
 FROM EVENTS
-ORDER BY run_id, event_number;
+ORDER BY run_id, event_number
+LIMIT 20; -- Sample only; the aggregate below checks every row.
 
 SHOW WAREHOUSES LIKE 'ADV_WH';
 -- CHECKPOINT: resumed_on advanced for the verification query. State should be
@@ -62,11 +63,15 @@ ALTER SESSION UNSET USE_CACHED_RESULT;
 
 SELECT run_id,
        COUNT(*)                     AS rows_in_run,
-       COUNT(DISTINCT event_number) AS distinct_event_numbers
+       COUNT(DISTINCT event_number) AS distinct_event_numbers,
+       MIN(event_number) AS first_event, MAX(event_number) AS last_event,
+       IFF(COUNT(*) = 1000 AND COUNT(DISTINCT event_number) = 1000
+           AND MIN(event_number) = 1 AND MAX(event_number) = 1000,
+           'PASS', 'CHECK') AS verification
 FROM EVENTS
 GROUP BY run_id;
--- Each completed run has 3 rows and 3 distinct event numbers.
--- Each Python invocation uses a new run ID and channel: reruns add another 3 rows.
+-- Each completed run has 1,000 rows and 1,000 distinct event numbers (1 through 1000).
+-- Each Python invocation uses a new run ID and channel: reruns add another 1,000 rows.
 
 -- STEP 4: Inspect the streaming pipe created for this target.
 SHOW PIPES IN SCHEMA ADV_ORDERS.STREAMING_DEMO;

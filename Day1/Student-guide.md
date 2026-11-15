@@ -20,7 +20,7 @@ Run SetUp/00, then Labs 01 through 09 in order. Lab 01 stages deterministic mock
 1. `01-OrderEvents.sql` and `02-IngestAndSnowpipe.sql` — stage and ingest events.
 2. [Lab 03](03-Python-Snowpipe.md) — submit four duplicate deliveries via the Snowpipe REST API, reaching 12 raw and pending rows.
 3. [Lab 04](04-DirectoryTriggered.md) — use a separate directory-table stream and triggered task; suspend its task afterward.
-4. [Lab 05: Snowpipe Streaming](05-SnowpipeStreaming/README.md) — append three records while ADV_WH is suspended, then use ADV_WH to verify the rows; clean up the isolated schema.
+4. [Lab 05: Snowpipe Streaming](05-SnowpipeStreaming/README.md) — append 1,000 records in paced groups while ADV_WH is suspended, then use ADV_WH to verify the rows; clean up the isolated schema.
 5. `06-SQLScripting.sql` — practice blocks, procedures and transaction ownership before Silver.
 6. `07-Silver.sql` — develop and commit the Bronze-to-Silver transformation.
 7. `08-TasksAndGold.sql` — orchestrate the pipeline and inspect Gold.

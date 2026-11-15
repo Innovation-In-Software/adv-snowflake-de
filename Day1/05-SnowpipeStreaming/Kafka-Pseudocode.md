@@ -6,7 +6,7 @@ The usual integration uses the **Snowflake Connector for Kafka**, running in Kaf
 
 ## Relationship to Lab 05
 
-In `stream_rows.py`, the loop `for number in range(1, 4)` generates three sample events. A custom Kafka application would get its events from Kafka instead.
+In `stream_rows.py`, `append_events` generates 1,000 sample events in groups of 100. A custom Kafka application would get its events from Kafka instead.
 
 ```text
 Kafka topic → Kafka consumer → custom application → Streaming SDK → Snowflake
@@ -72,10 +72,10 @@ If the application stops after Snowflake commits but before Kafka progress is sa
 
 This is not a complete production design. Production code must handle partition assignment/revocation, exclusive channel ownership, Kafka polling/heartbeat requirements, backpressure, rejected records, timeouts, retries, retention gaps, and shutdown. A failed or rejected row must not be silently skipped by advancing progress past it. A timeout does not prove that ingestion failed.
 
-Offset tracking does not remove duplicate business events published at different Kafka offsets. The lab itself deliberately adds another three rows on each run and does not implement restart recovery.
+Offset tracking does not remove duplicate business events published at different Kafka offsets. The lab itself deliberately adds another 1,000 rows on each run and does not implement restart recovery.
 
 ## From sample events to a continuous stream
 
-The lab loop generates three events and then exits. In a Kafka application, a consumer continuously supplies events and their partition offsets. Snowpipe Streaming appends the events to Snowflake, and the application waits for committed progress before acknowledging consumption. The Snowflake Connector for Kafka manages this integration in a typical production deployment.
+The lab loop generates 1,000 events with pauses between groups and then exits. In a Kafka application, a consumer continuously supplies events and their partition offsets. Snowpipe Streaming appends the events to Snowflake, and the application waits for committed progress before acknowledging consumption. The Snowflake Connector for Kafka manages this integration in a typical production deployment.
 
 References: [Snowflake Connector for Kafka](https://docs.snowflake.com/en/user-guide/kafka-connector/index) and [how the connector works](https://docs.snowflake.com/en/user-guide/kafka-connector/how-the-connector-works).
