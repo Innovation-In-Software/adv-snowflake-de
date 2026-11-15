@@ -102,42 +102,48 @@ ORDER BY START_TIME DESC;
 
 /*
 --------------------------------------------------------------------------------
-LOCAL WORKSTATION SETUP — PAUSE HERE BEFORE CONTINUING
+STUDENT VM SETUP — PAUSE HERE BEFORE CONTINUING
 --------------------------------------------------------------------------------
 
-1. Make sure you have cloned the ENTIRE course repository to your local
-   workstation. The repository root must contain .env.example and the SetUp
-   folder. A Snowflake Git Workspace alone is not the local folder needed here.
+Follow SetUp/README.md for the complete student setup guide:
+https://github.com/Innovation-In-Software/adv-snowflake-de/blob/main/SetUp/README.md
 
-2. In the repository root, copy .env.example to a file named .env. Edit .env
-   and set these three values:
+The guide covers copying commands into the VM, cloning the public repository,
+creating the Python 3.12 environment, installing SetUp/requirements.txt,
+checking packages, and configuring the local .env file. Use PowerShell on the
+VM for Python commands; a Snowflake Git Workspace alone is not a local clone.
 
-       SNOWFLAKE_ACCOUNT=<your Snowflake account identifier>
-       SNOWFLAKE_USER=<your Snowflake username>
-       SNOWFLAKE_PASSWORD=<your Snowflake password>
+If you have just completed this SQL script, skip the README's "Prepare
+Snowflake" step. Do not rerun this script: it resets the lab database.
 
-   Leave the classroom defaults for role, warehouse, database, schema and key
-   path. Do not commit or share .env.
+After completing the README's local setup, run these commands from the cloned
+repository root in VM PowerShell (not in the Snowflake SQL worksheet):
 
-3. Make sure Python is installed. From a terminal opened in the repository
-   root, install the required packages:
+1. Test Snowflake password connectivity:
 
-       python -m pip install -r SetUp/requirements.txt
+   & "$HOME\.venvs\adv-snowflake-de\Scripts\python.exe" .\SetUp\test_connection.py
 
-4. Verify username/password connectivity before changing the user's
-   authentication configuration:
+   Expected: "Snowflake connection confirmed." and role ADV_LAB.
 
-       python SetUp/test_connection.py
+2. Create/register the key pair and verify key-pair authentication:
 
-   Continue only after the script confirms the connected user and account.
+   & "$HOME\.venvs\adv-snowflake-de\Scripts\python.exe" .\SetUp\key_pair_setup.py
 
-5. Generate and register a key pair:
+   Expected: "Key-pair connection confirmed."
+   Use your dedicated training user: this sets its RSA_PUBLIC_KEY value.
+   Keep .env and the private key private; never commit or share them.
 
-       python SetUp/key_pair_setup.py
+3. Optional, when preparing for Lab 21: follow the README's AWS credential
+   instructions, then test the configured AWS identity:
 
-   This script saves an unencrypted private key outside the repository, then
-   connects as ACCOUNTADMIN and registers its public key on your user. It does
-   not print your password. Keep the private key private. Windows is the
-   supported class setup; ask the instructor for help if using another OS.
+   & "$HOME\.venvs\adv-snowflake-de\Scripts\python.exe" .\SetUp\test_aws_connection.py
+
+   Expected: "AWS connection confirmed." Verify the displayed account and
+   identity. With no configured credentials, the check is skipped.
+   This read-only STS check does not verify permissions for Lambda, API
+   Gateway, IAM or CloudWatch. See Lab 21 for those prerequisites.
+
+Stop and ask the instructor if a required check fails. After the Snowflake
+connection checks pass, continue with Day 1, Lab 01.
 --------------------------------------------------------------------------------
 */
