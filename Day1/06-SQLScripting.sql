@@ -3,6 +3,7 @@
 1) Use variables and conditional logic in an anonymous scripting block
 2) Create a reusable SQL procedure and inspect handled exceptions
 3) Commit valid writes and roll back conflicting writes before re-raising an error
+4) Compare a nested SQL procedure with anonymous Python procedures
 ----------------------------------------------------------------------------------*/
 
 -- Lab 06 | Day 1 | SQL scripting bridge (allow approximately 30 minutes)
@@ -192,7 +193,89 @@ SELECT * FROM OPS.BRIDGE_DEMO ORDER BY order_id;
 -- transfer SQL*Plus's default commit-on-EXIT behavior to this example.
 
 -- ──────────────────────────────────────────────────────────────────────────────
--- STEP 5 │ Clean up the disposable demonstration objects
+-- STEP 5 │ Local SQL routines and anonymous Python procedures
+-- Run each example separately as one complete statement. These examples create
+-- no persistent procedures and do not modify the pipeline or demonstration table.
+-- Python runs inside Snowflake on ADV_WH, not on the student VM. Its packages
+-- are specified below; the local VM virtual environment is not used here.
+-- Allow additional time for these examples and the first Python startup.
+-- ──────────────────────────────────────────────────────────────────────────────
+
+-- Example A: A nested SQL procedure in an anonymous scripting block.
+-- Declare counter before the nested procedure so the procedure can reference it.
+-- Both calls modify the same enclosing variable. The routine is local to this
+-- block; it cannot be called from a separate worksheet statement afterward.
+EXECUTE IMMEDIATE $$
+DECLARE
+    counter INTEGER DEFAULT 0;
+
+    increment_counter PROCEDURE()
+        RETURNS INTEGER
+        AS
+        BEGIN
+            counter := counter + 1;
+            RETURN counter;
+        END;
+
+BEGIN
+    CALL increment_counter();
+    CALL increment_counter();
+
+    RETURN counter;
+END;
+$$;
+-- CHECKPOINT: 2. Running the whole block again starts counter at zero again.
+
+-- Example B: The equivalent counter implemented in Python.
+-- WITH ... CALL defines and invokes an anonymous procedure in one statement.
+-- Do not execute the final CALL separately; counter_demo is not a stored object.
+-- Snowflake supplies the session argument to main automatically.
+-- increment_counter is a local Python function, not a Snowflake procedure.
+-- nonlocal allows it to update counter in the enclosing main function.
+WITH counter_demo AS PROCEDURE ()
+RETURNS INTEGER
+LANGUAGE PYTHON
+RUNTIME_VERSION = '3.12'
+PACKAGES = ('snowflake-snowpark-python')
+HANDLER = 'main'
+AS
+$$
+def main(session):
+    counter = 0
+
+    def increment_counter():
+        nonlocal counter
+        counter += 1
+        return counter
+
+    increment_counter()
+    increment_counter()
+
+    return counter
+$$
+CALL counter_demo();
+-- CHECKPOINT: 2. Each invocation creates a fresh counter inside main.
+
+-- Example C: Pass a SQL argument to an anonymous Python procedure.
+-- The parameter list follows AS PROCEDURE, not the name double_py.
+-- N is the SQL argument; Python receives its value as n after the supplied session.
+-- Again, select and execute the entire WITH ... CALL statement together.
+WITH double_py AS PROCEDURE (N INTEGER)
+    RETURNS INTEGER
+    LANGUAGE PYTHON
+    RUNTIME_VERSION = '3.12'
+    PACKAGES = ('snowflake-snowpark-python')
+    HANDLER = 'main'
+    AS
+    $$
+def main(session, n):
+    return n * 2
+$$
+CALL double_py(21);
+-- CHECKPOINT: 42. Change the argument to 7 and rerun the whole statement: 14.
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- STEP 6 │ Clean up the disposable demonstration objects
 -- ──────────────────────────────────────────────────────────────────────────────
 
 DROP PROCEDURE IF EXISTS OPS.SP_BRIDGE_APPLY(VARCHAR, NUMBER);
@@ -208,6 +291,8 @@ DROP TABLE IF EXISTS OPS.BRIDGE_DEMO;
 --           call, it still holds only o1 and o2 (no 999.00 row), and the call raises
 --           error -20001.
 --   Step 4: an unfinished-transaction error; o3/80 is absent after rollback.
+--   Step 5: nested SQL counter returns 2; Python counter returns 2;
+--           anonymous Python double_py(21) returns 42.
 --   Pipeline untouched: BRONZE / SILVER / GOLD are never referenced in this lab.
 -- Teaching notes:
 --   - If the room is strong on scripting, cut Step 1 to a 2-minute demo and keep
@@ -221,3 +306,5 @@ DROP TABLE IF EXISTS OPS.BRIDGE_DEMO;
 -- Sources:
 -- https://docs.snowflake.com/en/developer-guide/snowflake-scripting/exceptions
 -- https://docs.snowflake.com/en/sql-reference/transactions
+-- https://docs.snowflake.com/en/sql-reference/snowflake-scripting/declare
+-- https://docs.snowflake.com/en/sql-reference/sql/call-with
