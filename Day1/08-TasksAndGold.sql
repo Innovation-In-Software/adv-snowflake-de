@@ -137,6 +137,19 @@ SELECT * FROM GOLD.VW_ORDER_METRICS; -- US: 2, 165
 
 EXECUTE TASK APPLY_TASK;
 
+SELECT
+    NAME,
+    STATE,
+    QUERY_ID,
+    ERROR_CODE,
+    ERROR_MESSAGE,
+    SCHEDULED_TIME,
+    COMPLETED_TIME
+FROM TABLE(INFORMATION_SCHEMA.TASK_HISTORY(RESULT_LIMIT => 100))
+WHERE DATABASE_NAME = 'ADV_ORDERS'
+  AND SCHEMA_NAME = 'OPS'
+ORDER BY SCHEDULED_TIME DESC;
+
 -- ──────────────────────────────────────────────────────────────────────────────
 -- CHECKPOINT: raw/inbox = 14/14; current orders = 3;
 -- active amount = 165; pending stream = 0.
