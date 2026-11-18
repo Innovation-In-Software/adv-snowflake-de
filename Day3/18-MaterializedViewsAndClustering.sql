@@ -12,21 +12,21 @@
 -- This independent experiment creates a separate 150M-row copy and warehouse;
 -- Lab 16's tables and the main pipeline warehouse remain unchanged.
 -- Create a dedicated warehouse so cache resets do not interrupt pipeline work.
--- If LAB16_WH already exists, verify it is dedicated to this lab and has
+-- If LAB18_WH already exists, verify it is dedicated to this lab and has
 -- these settings and grants; skip CREATE rather than replacing it.
 USE ROLE ACCOUNTADMIN;
 
-CREATE OR REPLACE WAREHOUSE LAB16_WH
+CREATE OR REPLACE WAREHOUSE LAB18_WH
     WAREHOUSE_SIZE = 'XSMALL'
     ENABLE_QUERY_ACCELERATION = FALSE
     AUTO_SUSPEND = 60
     AUTO_RESUME = TRUE
     INITIALLY_SUSPENDED = TRUE;
 
-GRANT USAGE, OPERATE ON WAREHOUSE LAB16_WH TO ROLE ADV_LAB;
+GRANT USAGE, OPERATE ON WAREHOUSE LAB18_WH TO ROLE ADV_LAB;
 
 USE ROLE ADV_LAB;
-USE WAREHOUSE LAB16_WH;
+USE WAREHOUSE LAB18_WH;
 USE DATABASE ADV_ORDERS;
 USE SCHEMA OPS;
 
@@ -66,14 +66,14 @@ FROM PERF.TPCH_ORDERS_BY_DATE;
 
 -- Disable persisted result reuse above. For cold-cache measurements, the
 -- warehouse must fully suspend before it is resumed. Each restart incurs
--- startup charges and affects any other session using LAB16_WH.
--- The permanent procedure runs from a serverless task, not LAB16_WH itself.
--- It cancels ALL queries on LAB16_WH, suspends it, waits 10 seconds by
--- default, then resumes it. This simple lab assumes LAB16_WH is running.
+-- startup charges and affects any other session using LAB18_WH.
+-- The permanent procedure runs from a serverless task, not LAB18_WH itself.
+-- It cancels ALL queries on LAB18_WH, suspends it, waits 10 seconds by
+-- default, then resumes it. This simple lab assumes LAB18_WH is running.
 -- The wait is not a guarantee of full suspension; check the query profile.
 -- Pass another number of seconds in the task's CALL to change the wait.
 -- The task has no schedule and only runs when explicitly executed.
--- ADV_LAB needs OPERATE on LAB16_WH and EXECUTE MANAGED TASK on the account.
+-- ADV_LAB needs OPERATE on LAB18_WH and EXECUTE MANAGED TASK on the account.
 -- The task incurs serverless charges; recreating it can cancel an active run.
 
 
@@ -83,11 +83,11 @@ EXECUTE AS CALLER
 AS
 $$
 BEGIN
-    ALTER WAREHOUSE LAB16_WH ABORT ALL QUERIES;
-    ALTER WAREHOUSE LAB16_WH SUSPEND;
+    ALTER WAREHOUSE LAB18_WH ABORT ALL QUERIES;
+    ALTER WAREHOUSE LAB18_WH SUSPEND;
     CALL SYSTEM$WAIT(:WAIT_SECONDS);
-    ALTER WAREHOUSE LAB16_WH RESUME IF SUSPENDED;
-    RETURN 'LAB16_WH restarted: cache cleared,';
+    ALTER WAREHOUSE LAB18_WH RESUME IF SUSPENDED;
+    RETURN 'LAB18_WH restarted: cache cleared,';
 END;
 $$;
 
@@ -100,8 +100,8 @@ AS CALL OPS.SP_RESTART_LAB16_WH();
 -- Snowsight under Transformation > Tasks, open TASK_RESTART_LAB16_WH and
 -- wait for THIS run to show SUCCEEDED. If it fails or times out, inspect
 -- its run details and resolve the error; do not run the measurement.
--- Do not run AWAIT from LAB16_WH: ABORT ALL QUERIES cancels that statement.
--- Do not query task history from LAB16_WH while the task is running: that
+-- Do not run AWAIT from LAB18_WH: ABORT ALL QUERIES cancels that statement.
+-- Do not query task history from LAB18_WH while the task is running: that
 -- can resume it early. Check each profile's cache percentage; if nonzero,
 -- repeat the restart and measurement.
 
@@ -315,9 +315,9 @@ DROP PROCEDURE IF EXISTS OPS.SP_RESTART_LAB16_WH(INTEGER);
 USE WAREHOUSE ADV_WH;
 USE ROLE ACCOUNTADMIN;
 
-DROP WAREHOUSE IF EXISTS LAB16_WH;
-SHOW WAREHOUSES LIKE 'LAB16_WH';
--- CHECKPOINT: LAB16_WH is absent. The table and suspended MV still use storage.
+DROP WAREHOUSE IF EXISTS LAB18_WH;
+SHOW WAREHOUSES LIKE 'LAB18_WH';
+-- CHECKPOINT: LAB18_WH is absent. The table and suspended MV still use storage.
 USE ROLE ADV_LAB;
 
 -- 19-QueryAcceleration.sql is the separate query acceleration estimate and experiment.
