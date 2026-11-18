@@ -11,7 +11,7 @@
 -- Method: predict the work -> execute and capture the query ID -> inspect actual
 -- time and physical work -> state an observation -> propose the next experiment.
 -- Run 15-PerformanceSetup.sql first and use the same worksheet session throughout.
--- This lab collects a baseline; Labs 16-20 test possible improvements.
+-- This lab collects a baseline; Labs 16-19 test possible improvements.
 
 USE ROLE ADV_LAB;
 USE WAREHOUSE ADV_WH;
@@ -139,8 +139,8 @@ VALUES ('JOIN_BASELINE', $JOIN_QUERY_ID, $JOIN_CAPTURED_AT);
 -- with $JOIN_QUERY_ID. Inspect each scan, row flow through the join, and spill.
 -- A small grouped result can require substantial processing. Broad scanning
 -- may be appropriate here; the presence of a join does not prove a bottleneck.
--- NEXT EXPERIMENT (Lab 20): Investigate cache, capacity, and concurrent load.
--- Its sizing workload omits the PAID filter; compare sizing runs within Lab 20.
+-- Further investigation: compare cache, capacity, and concurrent load under
+-- controlled conditions. Keep the workload unchanged within each comparison.
 
 
 SELECT * 
@@ -188,5 +188,5 @@ ORDER BY RECORDED_AT;
 -- objects/pruning and optimizer rewrite. It is not an MV of this join aggregate.
 -- Lab 19: Substantial scan bytes and execution time motivate checking QAS
 -- eligibility. A large scan alone does not prove eligibility or actual QAS use.
--- Lab 20: Cache indicators, spill, execution time, and queueing guide separate
--- cache/sizing/concurrency experiments. Recovery is a separate operational topic.
+-- Cache indicators, spill, execution time, and queueing can guide separate
+-- cache/sizing/concurrency investigations.

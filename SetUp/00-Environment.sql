@@ -133,7 +133,7 @@ repository root in VM PowerShell (not in the Snowflake SQL worksheet):
    Use your dedicated training user: this sets its RSA_PUBLIC_KEY value.
    Keep .env and the private key private; never commit or share them.
 
-3. Optional, when preparing for Lab 21: follow the README's AWS credential
+3. Optional, when preparing for Lab 20: follow the README's AWS credential
    instructions, then test the configured AWS identity:
 
    & "$HOME\.venvs\adv-snowflake-de\Scripts\python.exe" .\SetUp\test_aws_connection.py
@@ -141,7 +141,7 @@ repository root in VM PowerShell (not in the Snowflake SQL worksheet):
    Expected: "AWS connection confirmed." Verify the displayed account and
    identity. With no configured credentials, the check is skipped.
    This read-only STS check does not verify permissions for Lambda, API
-   Gateway, IAM or CloudWatch. See Lab 21 for those prerequisites.
+   Gateway, IAM or CloudWatch. See Lab 20 for those prerequisites.
 
 Stop and ask the instructor if a required check fails. After the Snowflake
 connection checks pass, continue with Day 1, Lab 01.

@@ -19,7 +19,7 @@
 -- continues indefinitely: we pause it to prevent further unintended ingestion.
 -- Days 2-3 add refresh/maintenance services: stop those explicitly as shown below.
 -- End active notebook sessions using their controls if a notebook was used.
--- Lab 21 has separate Snowflake and AWS cleanup steps in its notebook;
+-- Lab 20 has separate Snowflake and AWS cleanup steps in its notebook;
 -- this shutdown script does not remove those resources.
 -- Preserved tables/stage files still incur storage charges after compute stops.
 -- Sources:

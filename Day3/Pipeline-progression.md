@@ -56,21 +56,7 @@ Lab 18 copies TPC-H sample orders into an independent table; Lab 16's tables sta
 
 Estimate QAS eligibility for SF1 and SF1000 queries on a separate warehouse, inspect actual usage if eligible, and clean up the warehouse.
 
-## Lab 20 - Cache, compute and local recovery
-
-```text
-ORDERS_BASE + CUSTOMERS -> ADV_TUNE_WH (XS / Small)
-                          -> measured query IDs -> MEASUREMENTS
-
-ORDERS_BASE -- clone --> RECOVERY_COPY
-                          -> DROP -> UNDROP -> verify restored count
-
-Two student worksheets -> concurrent queries -> inspect queueing
-```
-
-Prepare RECOVERY_COPY before the experiments. The original business pipeline is untouched. Keep result-cache, warehouse-cache and sizing observations separate. Local UNDROP demonstrates recovery of this disposable copy, not cross-region readiness.
-
-## Lab 21 - AWS external function
+## Lab 20 - AWS external function
 
 ```text
 Snowflake SQL -> external function -> API integration

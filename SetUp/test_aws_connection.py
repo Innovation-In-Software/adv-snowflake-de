@@ -54,7 +54,7 @@ def main() -> None:
 
     print("AWS connection confirmed.")
     print(f"Account: {identity['Account']} | Identity: {identity['Arn']}")
-    print("This check does not verify permissions for Lab 21.")
+    print("This check does not verify permissions for Lab 20.")
 
 
 if __name__ == "__main__":

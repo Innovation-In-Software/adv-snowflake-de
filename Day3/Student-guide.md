@@ -18,9 +18,8 @@ Auto-suspend can put an idle warehouse to sleep, but enabled task/refresh worklo
 3. **Lab 17:** `17-SearchOptimization.sql` — compare customer lookups before and after SOS; wait for readiness and clean up the isolated resources.
 4. **Lab 18:** `18-MaterializedViewsAndClustering.sql` — compare access patterns and a customer-clustered materialized view using SF100 sample orders. Remove the restart task and procedure, suspend the view, and drop the dedicated `LAB16_WH`.
 5. **Lab 19:** `19-QueryAcceleration.sql` — test QAS eligibility and service usage using the dedicated warehouse; drop it afterward.
-6. **Lab 20:** `20-WarehouseCacheAndRecovery.sql` — compare caching and warehouse sizes, then clone/drop/undrop a disposable table.
-7. **Lab 21:** `21-AWS-External-Function.ipynb` — build, test and clean up the Snowflake and AWS resources; requires an AWS account and a Snowflake-hosted notebook.
-8. `99-CourseStop.sql` — stop course tasks, pipe, Dynamic Tables, maintenance and warehouses.
+6. **Lab 20:** `20-AWS-External-Function.ipynb` — build, test and clean up the Snowflake and AWS resources; requires an AWS account and a Snowflake-hosted notebook.
+7. `99-CourseStop.sql` — stop course tasks, pipe, Dynamic Tables, maintenance and warehouses.
 
 ## Instructor rehearsal evidence
 

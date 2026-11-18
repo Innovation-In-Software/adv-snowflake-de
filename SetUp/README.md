@@ -150,7 +150,7 @@ identity are the ones you intend to use. If both placeholders are unchanged, the
 script skips the check; this does not confirm AWS connectivity. Return to section
 4 or ask the instructor. Incomplete or invalid credentials cause an error. Existing
 environment variables take precedence over `.env`. The check uses AWS STS and
-does not verify Lab 21 permissions for Lambda, API Gateway, IAM or CloudWatch.
+does not verify Lab 20 permissions for Lambda, API Gateway, IAM or CloudWatch.
 
 ## 7. Create and test your key pair
 
@@ -184,4 +184,4 @@ Run that day's Snowflake stop script and end active notebook sessions. Closing t
 
 - Day 1: [99-Stop.sql](../Day1/99-Stop.sql)
 - Day 2: [99-Day2-Stop.sql](../Day2/99-Day2-Stop.sql)
-- Day 3: [99-CourseStop.sql](../Day3/99-CourseStop.sql), plus Lab 21's AWS cleanup if you created its resources.
+- Day 3: [99-CourseStop.sql](../Day3/99-CourseStop.sql), plus Lab 20's AWS cleanup if you created its resources.
