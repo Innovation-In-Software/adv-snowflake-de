@@ -77,7 +77,7 @@ FROM PERF.TPCH_ORDERS_BY_DATE;
 -- The task incurs serverless charges; recreating it can cancel an active run.
 
 
-CREATE OR REPLACE PROCEDURE OPS.SP_RESTART_LAB16_WH(WAIT_SECONDS INTEGER DEFAULT 10)
+CREATE OR REPLACE PROCEDURE OPS.SP_RESTART_LAB18_WH(WAIT_SECONDS INTEGER DEFAULT 10)
 RETURNS STRING
 EXECUTE AS CALLER
 AS
@@ -91,13 +91,13 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE TASK OPS.TASK_RESTART_LAB16_WH
+CREATE OR REPLACE TASK OPS.TASK_RESTART_LAB18_WH
     USER_TASK_TIMEOUT_MS = 90000
     SERVERLESS_TASK_MAX_STATEMENT_SIZE = 'XSMALL'
-AS CALL OPS.SP_RESTART_LAB16_WH();
+AS CALL OPS.SP_RESTART_LAB18_WH();
 
 -- Each EXECUTE TASK below is asynchronous. After each call, STOP: in
--- Snowsight under Transformation > Tasks, open TASK_RESTART_LAB16_WH and
+-- Snowsight under Transformation > Tasks, open TASK_RESTART_LAB18_WH and
 -- wait for THIS run to show SUCCEEDED. If it fails or times out, inspect
 -- its run details and resolve the error; do not run the measurement.
 -- Do not run AWAIT from LAB18_WH: ABORT ALL QUERIES cancels that statement.
@@ -119,7 +119,7 @@ SELECT "partitionsTotal", "partitionsAssigned"
 FROM $1
 WHERE "operation" = 'GlobalStats';
 
-EXECUTE TASK OPS.TASK_RESTART_LAB16_WH;
+EXECUTE TASK OPS.TASK_RESTART_LAB18_WH;
 -- STOP: wait for this task run to SUCCEED in Snowsight before continuing.
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
@@ -155,7 +155,7 @@ SELECT "partitionsTotal", "partitionsAssigned"
 FROM $1
 WHERE "operation" = 'GlobalStats';
 
-EXECUTE TASK OPS.TASK_RESTART_LAB16_WH;
+EXECUTE TASK OPS.TASK_RESTART_LAB18_WH;
 -- STOP: wait for this task run to SUCCEED in Snowsight before continuing.
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
@@ -218,7 +218,7 @@ WHERE "operation" = 'GlobalStats';
 -- STEP 4 │ Measure a direct MV read
 -- ──────────────────────────────────────────────────────────────────────────────
 
-EXECUTE TASK OPS.TASK_RESTART_LAB16_WH;
+EXECUTE TASK OPS.TASK_RESTART_LAB18_WH;
 -- STOP: wait for this task run to SUCCEED in Snowsight before continuing.
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
@@ -245,7 +245,7 @@ SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
 FROM PERF.TPCH_ORDERS_BY_DATE 
 WHERE O_CUSTKEY = 7918018;
 
-EXECUTE TASK OPS.TASK_RESTART_LAB16_WH;
+EXECUTE TASK OPS.TASK_RESTART_LAB18_WH;
 -- STOP: wait for this task run to SUCCEED in Snowsight before continuing.
 
 SELECT COUNT(*) AS ORDER_COUNT, SUM(O_TOTALPRICE) AS ORDER_AMOUNT
@@ -307,8 +307,8 @@ SHOW MATERIALIZED VIEWS LIKE 'MVW_BY_CUSTOMER' IN SCHEMA PERF;
 
 -- First confirm any restart task run has finished in Snowsight; dropping the
 -- task or procedure during a run can interrupt cleanup or restart the warehouse.
-DROP TASK IF EXISTS OPS.TASK_RESTART_LAB16_WH;
-DROP PROCEDURE IF EXISTS OPS.SP_RESTART_LAB16_WH(INTEGER);
+DROP TASK IF EXISTS OPS.TASK_RESTART_LAB18_WH;
+DROP PROCEDURE IF EXISTS OPS.SP_RESTART_LAB18_WH(INTEGER);
 
 -- Drop the dedicated warehouse even if the lab ends before the MV is created.
 -- ACCOUNTADMIN created it, so switch back to that role to drop it.

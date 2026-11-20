@@ -74,7 +74,7 @@ USE SECONDARY ROLES NONE;
 --
 -- From a PowerShell terminal at the repository root, not a SQL worksheet:
 --
--- python -m pip install -r Day2\requirements-local.txt
+-- python -m pip install -r SetUp\requirements.txt
 -- python -m streamlit run Day2\14-Streamlit-Gold.py -- --local
 --
 -- Install dependencies once; use --local to select the key-pair connection.
@@ -92,12 +92,9 @@ USE SECONDARY ROLES NONE;
 -- STEP 4 │ Optional: inspect governed Gold in a notebook
 -- ──────────────────────────────────────────────────────────────────────────────
 
--- Governed-Gold.ipynb explores the same consumer contract and the distinction
--- between authorization and Dynamic Table freshness. Its Snowsight UI import
--- path is an unrehearsed template / discussion-only, not a required hands-on step.
--- If the instructor demonstrates it, import the notebook into
--- ADV_ORDERS.CONSUMER as ADV_ANALYST_US, select ADV_WH as the query warehouse
--- and use the Snowflake warehouse Python runtime. Run its cells in order.
+-- No governed-Gold notebook is included in the repository. A notebook UI
+-- demonstration of the same consumer contract is unrehearsed and discussion-only,
+-- not a required hands-on step.
 --
 -- CHECKPOINT: the role guard confirms ADV_ANALYST_US; the view returns US orders
 -- o1 and o3 with masked emails; two active orders total 165 USD.

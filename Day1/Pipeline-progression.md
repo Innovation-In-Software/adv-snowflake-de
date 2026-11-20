@@ -59,7 +59,7 @@ The task starts after refreshed directory metadata changes. The procedure consum
 Python producer -> named channel -> streaming pipe -> isolated EVENTS table
 ```
 
-Wait for the committed offset and verify three rows. This exercise does not change the business pipeline. Clean up the separate schema and warehouse.
+Wait for the committed offset and verify 1,000 rows. This exercise does not change the business pipeline. Clean up the separate schema and retain `ADV_WH`.
 
 ## Lab 06 - SQL scripting bridge
 

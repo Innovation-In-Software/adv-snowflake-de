@@ -1,6 +1,6 @@
 # Day 1 — Build and operate the order-event pipeline
 
-Open [Pipeline progression](Pipeline-progression.md) alongside the scripts to follow the objects and connections added by each lab. A [PDF version](Pipeline-progression.pdf) is also available.
+Open [Pipeline progression](Pipeline-progression.md) alongside the scripts to follow the objects and connections added by each lab. See the [Day 1 lineage diagram](Day1-Lineage.pdf) for a visual overview.
 
 
 ## Required before leaving class
