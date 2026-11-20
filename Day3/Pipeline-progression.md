@@ -50,7 +50,7 @@ TPC-H SF100 ORDERS -> TPCH_ORDERS_BY_DATE (150M, O_ORDERDATE)
                               base query -> optimizer may choose MV
 ```
 
-Lab 18 copies TPC-H sample orders into an independent table; Lab 16's tables stay unchanged. It uses a dedicated `LAB16_WH` and an on-demand serverless restart task so cache resets do not interrupt pipeline work. Confirm the task run succeeds before measuring. Compare date and customer scans, then direct MV results with the base query and inspect whether the optimizer chooses a rewrite. A covered projection and `SELECT *` illustrate column coverage; a no-rewrite is valid. The copy and MV add storage and maintenance costs; remove the task and procedure, suspend the MV, and drop the warehouse afterward.
+Lab 18 copies TPC-H sample orders into an independent table; Lab 16's tables stay unchanged. It uses a dedicated `LAB18_WH` and an on-demand serverless restart task so cache resets do not interrupt pipeline work. Confirm the task run succeeds before measuring. Compare date and customer scans, then direct MV results with the base query and inspect whether the optimizer chooses a rewrite. A covered projection and `SELECT *` illustrate column coverage; a no-rewrite is valid. The copy and MV add storage and maintenance costs; remove the task and procedure, suspend the MV, and drop the warehouse afterward.
 
 ## Lab 19 - Query acceleration
 

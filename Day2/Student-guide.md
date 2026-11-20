@@ -26,7 +26,7 @@ The core policy, masking and scheduled data-quality branches require an appropri
 5. `14-GoldConsumers.sql` — consume the US contract. The Streamlit and Governed Notebook UI paths are unrehearsed templates / discussion-only until the UI import path is verified; do not treat them as validated hands-on steps.
 6. `99-Day2-Stop.sql` — suspend refreshes and compute after class; retain course data.
 
-`Snowpark-OrderTransform.py` is the reference source for Lab 10. `Snowpark-Pipeline.ipynb` is an alternative, unvalidated notebook-consumer branch, not an additional required lab. Never run two consumers against the same stream.
+Lab 10's notebook contains the Snowpark transformation source and deployment cells. Never run two consumers against the same stream.
 
 For an optional local Streamlit run, complete [student VM setup](../SetUp/README.md), then run `& "$HOME\.venvs\adv-snowflake-de\Scripts\python.exe" -m streamlit run .\Day2\14-Streamlit-Gold.py -- --local` from the repository root in PowerShell. The root `.env` must provide `SNOWFLAKE_ACCOUNT`, `SNOWFLAKE_USER`, and `SNOWFLAKE_PRIVATE_KEY_FILE` (and `SNOWFLAKE_PRIVATE_KEY_FILE_PWD` if the key is encrypted). The user must have `ADV_ANALYST_US`; the app connects with that role, disables secondary roles, and uses `ADV_WH` and `ADV_ORDERS.CONSUMER`. This local path is separate from the unrehearsed hosted UI path.
 

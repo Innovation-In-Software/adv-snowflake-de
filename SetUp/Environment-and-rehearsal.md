@@ -28,9 +28,9 @@ Instructor executes; all students repeat: sign in, confirm account/region, execu
 
 ## Rehearsal and release
 
-A single-account rehearsal completed on 2026-10-12. See the root Validation-report.md for actual coverage and remaining gates. The final warehouse definitions explicitly disable QAS to control inherited account defaults.
+A single-account rehearsal completed on 2026-10-12. Confirm remaining rehearsal gates before class. The final warehouse definitions explicitly disable QAS to control inherited account defaults.
 
-On a fresh account execute 00, then Day1 01–06, Day2 07–11 and Day3 13–18, observing every asynchronous pause; run each stop script. Capture account cloud/region, edition, CURRENT_VERSION(), date, role, query IDs, outputs, timings, task history and errors in Validation-report.md. Do not capture credentials. Repeat on a second student-equivalent account. Rehearse another clean run before early November; recheck preview scope and UI changes then. Fix and rerun affected paths before signing off.
+On a fresh account execute 00, then Day 1 Labs 01–09, Day 2 Labs 10–14, and Day 3 Labs 15–20, observing every asynchronous pause; run each day's stop script. Capture account cloud/region, edition, CURRENT_VERSION(), date, role, query IDs, outputs, timings, task history and errors in a rehearsal log. Do not capture credentials. Repeat on a second student-equivalent account. Rehearse another clean run before class; recheck preview scope and UI changes then. Fix and rerun affected paths before signing off.
 
 ## Reset boundaries
 
